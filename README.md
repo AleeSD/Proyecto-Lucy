@@ -13,7 +13,7 @@ Lucy es un asistente de inteligencia artificial diseñado para funcionar como as
 - Bibliotecas: keras, tensorflow, nltk
 
 ## Instalación
-1. Clonar el repositorio: `git clone https://github.com/tuusuario/Proyecto-Lucy.git`
+1. Clonar el repositorio: `git clone https://github.com/AleeSD/Proyecto-Lucy.git`
 2. Instalar dependencias: `pip install -r requirements.txt`
 3. Ejecutar: `python lucy.py`
 
@@ -22,3 +22,9 @@ Lucy es un asistente de inteligencia artificial diseñado para funcionar como as
 
 ## Roadmap
 Ver el archivo PLAN-DESARROLLO.md para el plan detallado de implementación.
+
+## Últimas actualizaciones (Día 1)
+- ✅ Soporte completo para caracteres especiales en español
+- ✅ Eliminación de mensajes de progreso de Keras
+- ✅ Mejora en la calidad de respuestas
+- ✅ Sistema de logging mejorado
