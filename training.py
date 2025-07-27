@@ -1,3 +1,6 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Ocultar mensajes de TensorFlow
+
 import random
 import json
 import pickle
@@ -64,8 +67,8 @@ model.add(Dropout(0.5))
 model.add(Dense(len(train_y[0]), activation='softmax'))
 
 model.compile(optimizer=SGD(), loss='categorical_crossentropy', metrics=['accuracy'])
-model.fit(train_x, train_y, epochs=200, batch_size=5)
-
+# Modificar la línea del model.fit para ocultar progreso
+model.fit(train_x, train_y, epochs=200, batch_size=5, verbose=0)
 # Guardar el modelo entrenado
 model.save('lucy_model.h5')
 print("Modelo entrenado y guardado.")
