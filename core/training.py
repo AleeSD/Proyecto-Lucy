@@ -1,4 +1,9 @@
 import os
+
+# Configuración de rutas
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Si está en /core
+DATA_DIR = os.path.join(BASE_DIR, "..", "data")
+MODELS_DIR = os.path.join(BASE_DIR, "..", "models")
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Ocultar mensajes de TensorFlow
 
 import random
@@ -10,6 +15,15 @@ from nltk.stem import WordNetLemmatizer
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
 from keras.optimizers import SGD
+
+# Configuración de rutas 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Sube un nivel a /Proyecto-Lucy
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+MODELS_DIR = os.path.join(BASE_DIR, 'models')
+
+# Cargar intents.json con rutas dinámicas
+with open(os.path.join(DATA_DIR, 'intents.json'), 'r', encoding='utf-8') as file:
+    intents = json.load(file)
 
 # Preprocesamiento de datos (tokenización, lematización, etc.)
 lemmatizer = WordNetLemmatizer()
@@ -70,5 +84,7 @@ model.compile(optimizer=SGD(), loss='categorical_crossentropy', metrics=['accura
 # Modificar la línea del model.fit para ocultar progreso
 model.fit(train_x, train_y, epochs=200, batch_size=5, verbose=0)
 # Guardar el modelo entrenado
-model.save('lucy_model.h5')
+pickle.dump(words, open(os.path.join(DATA_DIR, 'words.pkl'), 'wb'))
+pickle.dump(classes, open(os.path.join(DATA_DIR, 'classes.pkl'), 'wb'))
+model.save(os.path.join(MODELS_DIR, 'lucy_model.h5'))  # Guarda el modelo en /models
 print("Modelo entrenado y guardado.")

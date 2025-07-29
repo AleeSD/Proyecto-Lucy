@@ -1,0 +1,48 @@
+{"intents":[
+    {
+        "tag": "saludos",
+        "patterns": ["Hola", "¿Qué tal?", "Buenos días", "Buenas tardes", "Buenas noches", "¿Cómo estás?", "Saludos"],
+        "responses": ["¡Hola! ¿Cómo puedo ayudarte hoy?", "¡Buenos días! ¿En qué puedo asistirte?", "¡Saludos! ¿Cómo te encuentras?",
+        "¡Buenas tardes! ¿En qué te ayudo?", "¡Buenas noches! ¿Cómo puedo ayudarte?", "Que tal?", "Hola, ¿cómo estás?", "¡Hola! ¿Cómo estás? 😊",
+        "¡Buenos días! ¿En qué puedo ayudarte?",
+        "Hola, soy Lucy. ¿Qué necesitas?"]
+    },
+    {
+        "tag": "nombre",
+        "patterns": ["¿Cuál es tu nombre?", "¿Cómo te llamas?", "¿Cómo te puedo llamar?"],
+        "responses": ["Soy tu asistente virtual, me llamo Lucy, en qué puedo ayudarte?", 
+        "Mi nombre es Lucy.", "Puedes llamarme Lucy, ¿En qué puedo asistirte?", "Me llamo Lucy, ¿Cómo puedo ayudarte hoy?", 
+        "Soy Lucy, tu asistente virtual, ¿en qué puedo ayudarte?", "Puedes llamarme Lucy, ¿qué necesitas?", "Mi nombre es Lucy, ¿cómo puedo asistirte hoy?",
+        "Soy Lucy, ¿en qué puedo ayudarte?", "Puedes llamarme Lucy, ¿qué puedo hacer por ti?", "Mi nombre es Lucy, ¿cómo puedo ayudarte?", 
+        "Soy Lucy, tu asistente virtual, ¿qué necesitas?"]
+    },
+    {
+        "tag": "despedida",
+        "patterns": ["Adiós", "Hasta luego", "Nos vemos", "Hasta pronto", "Cuídate", "Hasta la próxima", 
+        "Chao", "Hasta la vista", "Hasta luego, Lucy", "adiós"],
+    "responses": ["¡Hasta pronto! 👋", "Adiós, vuelve cuando quieras.", "Nos vemos más tarde.", "¡Cuídate! Hasta luego.",
+        "¡Hasta la próxima! 😊"]
+    },
+    {
+        "tag": "agradecimiento",
+        "patterns": ["gracias", "muchas gracias", "te lo agradezco", "gracias por tu ayuda"],
+        "responses": ["¡De nada! 😊", "¡Con gusto!", "No hay de qué, estoy aquí para ayudarte.", 
+        "¡Gracias a ti por usarme!", "¡Agradezco tu amabilidad!", "¡Siempre aquí para ayudarte!"]
+    },
+    {
+        "tag": "ayuda",
+        "patterns": ["¿Puedes ayudarme?", "Necesito ayuda", "Ayúdame por favor", "¿Me puedes ayudar?"],
+        "responses": ["Claro, ¿en qué puedo ayudarte?", "Estoy aquí para ayudarte, ¿qué necesitas?", 
+        "Por supuesto, dime cómo puedo asistirte.", "¡Claro! ¿Qué problema tienes?", 
+        "Estoy aquí para ayudarte, ¿qué necesitas resolver?"]
+    },
+    {
+        "tag": "informacion",
+        "patterns": ["¿Qué puedes hacer?", "¿Cuáles son tus funciones?", "¿Qué servicios ofreces?"],
+        "responses": ["Puedo ayudarte con información, responder preguntas y más.", 
+        "Ofrezco asistencia en diversas áreas, ¿qué necesitas saber?", 
+        "Estoy aquí para responder tus preguntas y ayudarte en lo que necesites.", 
+        "Puedo proporcionarte información y asistencia en varios temas."]
+    }
+]
+}
