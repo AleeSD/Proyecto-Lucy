@@ -1,0 +1,83 @@
+    {
+    "app": {
+        "name": "Lucy AI",
+        "version": "1.0.0",
+        "author": "AleeSD",
+        "description": "Asistente de IA conversacional"
+    },
+    "model": {
+        "default_language": "es",
+        "supported_languages": ["es", "en"],
+        "confidence_threshold": 0.25,
+        "max_response_length": 500,
+        "training_epochs": 200,
+        "batch_size": 5,
+        "dropout_rate": 0.5
+    },
+    "paths": {
+        "data_dir": "data",
+        "models_dir": "data/models", 
+        "intents_dir": "data/intents",
+        "logs_dir": "logs",
+        "temp_dir": "temp"
+    },
+    "database": {
+        "name": "conversations.db",
+        "path": "data/conversations.db",
+        "backup_enabled": true,
+        "backup_interval_hours": 24,
+        "max_conversations": 10000
+    },
+    "api": {
+        "enabled": false,
+        "host": "localhost",
+        "port": 8000,
+        "debug": false,
+        "cors_enabled": true,
+        "rate_limit": {
+        "enabled": true,
+        "requests_per_minute": 60
+        }
+    },
+    "logging": {
+        "level": "INFO",
+        "file_enabled": true,
+        "console_enabled": true,
+        "max_file_size_mb": 10,
+        "backup_count": 5,
+        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    },
+    "performance": {
+        "cache_enabled": true,
+        "cache_size": 1000,
+        "response_timeout": 30,
+        "max_concurrent_requests": 10
+    },
+    "features": {
+        "voice_recognition": false,
+        "text_to_speech": false,
+        "web_search": false,
+        "file_analysis": false,
+        "plugins_enabled": false
+    },
+    "security": {
+        "enable_input_validation": true,
+        "max_input_length": 1000,
+        "blocked_keywords": [],
+        "rate_limiting": true
+    },
+    "ui": {
+        "theme": "default",
+        "language": "auto",
+        "show_confidence": false,
+        "show_response_time": true,
+        "max_history_display": 50
+    },
+    "training": {
+        "auto_retrain": false,
+        "retrain_threshold": 100,
+        "validation_split": 0.2,
+        "save_checkpoints": true,
+        "checkpoint_interval": 50
+    }
+    }
