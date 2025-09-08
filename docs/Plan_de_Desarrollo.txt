@@ -19,7 +19,9 @@
 - Optimización del pipeline de entrenamiento
 - Sistema de validación de datos
 - Métricas de evaluación del modelo
-- Guardado automático de checkpoints
+- Guardado automático de checkpoints y mejor modelo
+- EarlyStopping y ReduceLROnPlateau
+- CSVLogger y semillas para reproducibilidad
 
 **Día 4: Base de Datos de Conversaciones**
 - Implementar SQLite para historial

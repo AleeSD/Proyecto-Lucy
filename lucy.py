@@ -45,6 +45,13 @@ with suppress_tf_logs():
     from core import LucyAI, ConfigManager, get_config_manager
     from core.database import ConversationDB
     from core.utils import create_session_id, performance_monitor, log_error_with_context
+    # Integración del sistema de logging y monitoreo (Día 02)
+    from core.logging_system import (
+        get_logger,
+        log_conversation,
+        log_performance,
+        log_error as log_error_advanced,
+    )
 
 
 class LucyApplication:
@@ -83,45 +90,11 @@ class LucyApplication:
             raise
     
     def _setup_logging(self):
-        """Configura el sistema de logging avanzado"""
+        """Configura el sistema de logging usando el gestor central (Día 02)"""
         try:
-            log_level = self.config.get('logging', {}).get('level', 'INFO')
-            
-            # Configurar logger raíz
-            root_logger = logging.getLogger()
-            root_logger.setLevel(getattr(logging, log_level))
-            
-            # Crear handler de consola si está habilitado
-            if self.config.get('logging', {}).get('console_enabled', True):
-                console_handler = logging.StreamHandler()
-                console_handler.setLevel(logging.INFO)
-                
-                formatter = logging.Formatter(
-                    self.config.get('logging', {}).get('format', 
-                                '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-                )
-                console_handler.setFormatter(formatter)
-                
-                root_logger.addHandler(console_handler)
-            
-            # Crear handler de archivo si está habilitado
-            if self.config.get('logging', {}).get('file_enabled', True):
-                logs_dir = Path(self.config_manager.get_path('logs_dir'))
-                logs_dir.mkdir(exist_ok=True)
-                
-                file_handler = logging.FileHandler(logs_dir / 'lucy.log', encoding='utf-8')
-                file_handler.setLevel(logging.DEBUG)
-                
-                detailed_formatter = logging.Formatter(
-                    '%(asctime)s - %(name)s - %(levelname)s - %(module)s - %(funcName)s:%(lineno)d - %(message)s'
-                )
-                file_handler.setFormatter(detailed_formatter)
-                
-                root_logger.addHandler(file_handler)
-            
-            self.logger = logging.getLogger(__name__)
-            self.logger.info("[OK] Sistema de logging configurado")
-            
+            # Obtener logger desde el sistema central
+            self.logger = get_logger(__name__)
+            self.logger.info("[OK] Sistema de logging central inicializado")
         except Exception as e:
             print(f"[WARN] Error configurando logging: {e}")
     
@@ -192,10 +165,30 @@ class LucyApplication:
                     
                     print(f"\n[ROBOT] Lucy: {response}")
                     
+                    # Log de rendimiento (Día 02)
+                    try:
+                        log_performance('response_time', response_time, unit='seconds',
+                                        tags={'feature': 'interactive_chat'})
+                    except Exception:
+                        pass
+
                     # Mostrar tiempo de respuesta si está configurado
                     if self.config.get('ui', {}).get('show_response_time', False):
                         print(f"   [CLOCK] Tiempo de respuesta: {response_time:.2f}s")
                     
+                    # Log estructurado de conversación (Día 02)
+                    try:
+                        log_conversation(
+                            session_id=self.session_id,
+                            user_input=user_input,
+                            bot_response=response,
+                            intent=self.lucy_ai.get_last_intent(),
+                            confidence=self.lucy_ai.get_last_confidence(),
+                            language=self.lucy_ai.get_current_language(),
+                            response_time=response_time
+                        )
+                    except Exception:
+                        pass
                     # Guardar conversación en base de datos
                     if self.db:
                         self.db.save_conversation(
@@ -214,11 +207,19 @@ class LucyApplication:
                     print("\n\n[WAVE] ¡Hasta luego!")
                     break
                 except Exception as e:
-                    log_error_with_context(e, {
-                        'user_input': user_input,
-                        'session_id': self.session_id,
-                        'conversation_count': conversation_count
-                    })
+                    # Intentar log avanzado con contexto; fallback a utilidades
+                    try:
+                        log_error_advanced(e, context={
+                            'user_input': user_input,
+                            'session_id': self.session_id,
+                            'conversation_count': conversation_count
+                        })
+                    except Exception:
+                        log_error_with_context(e, {
+                            'user_input': user_input,
+                            'session_id': self.session_id,
+                            'conversation_count': conversation_count
+                        })
                     print("[X] Lo siento, ocurrió un error. Intenta de nuevo.")
             
             # Estadísticas de sesión

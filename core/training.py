@@ -14,9 +14,11 @@ import logging
 import numpy as np
 from pathlib import Path
 from typing import Dict, List, Tuple, Any
+import random as pyrandom
 
 # Configurar TensorFlow antes de importar
 from .utils import suppress_tf_logs, load_json_file, measure_execution_time
+from .logging_system import log_performance
 from .config_manager import get_config_manager
 
 # Importaciones con supresión de logs
@@ -26,6 +28,7 @@ with suppress_tf_logs():
     from tensorflow.keras.models import Sequential
     from tensorflow.keras.layers import Dense, Activation, Dropout
     from tensorflow.keras.optimizers import SGD
+    from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, CSVLogger
     from sklearn.model_selection import train_test_split
 
 
@@ -48,6 +51,10 @@ class LucyTrainer:
         self.batch_size = self.config.get('model', {}).get('batch_size', 5)
         self.dropout_rate = self.config.get('model', {}).get('dropout_rate', 0.5)
         self.validation_split = self.config.get('training', {}).get('validation_split', 0.2)
+        self.seed = int(self.config.get('training', {}).get('seed', 42))
+        self.enable_early_stopping = bool(self.config.get('training', {}).get('early_stopping', True))
+        self.enable_lr_schedule = bool(self.config.get('training', {}).get('reduce_lr_on_plateau', True))
+        self.enable_csv_logger = bool(self.config.get('training', {}).get('csv_logger', True))
         
         # Componentes del modelo
         self.lemmatizer = WordNetLemmatizer()
@@ -61,6 +68,7 @@ class LucyTrainer:
         
         # Asegurar datos de NLTK
         self._ensure_nltk_data()
+        self._set_global_seeds()
         
         self.logger.info("[OK] Sistema de entrenamiento inicializado")
     
@@ -99,6 +107,18 @@ class LucyTrainer:
         except Exception as e:
             self.logger.error(f"Error configurando NLTK: {e}")
             raise
+
+    def _set_global_seeds(self):
+        """Fija semillas para reproducibilidad básica"""
+        try:
+            np.random.seed(self.seed)
+            pyrandom.seed(self.seed)
+            with suppress_tf_logs():
+                import tensorflow as tf
+                tf.random.set_seed(self.seed)
+            self.logger.debug(f"[OK] Semillas fijadas: {self.seed}")
+        except Exception as e:
+            self.logger.warning(f"No se pudieron fijar semillas completamente: {e}")
     
     @measure_execution_time
     def load_training_data(self, languages: List[str] = None) -> bool:
@@ -253,7 +273,8 @@ class LucyTrainer:
             ])
             
             # Configurar optimizador
-            optimizer = SGD(learning_rate=0.01, momentum=0.9, nesterov=True)
+            learning_rate = float(self.config.get('training', {}).get('learning_rate', 0.01))
+            optimizer = SGD(learning_rate=learning_rate, momentum=0.9, nesterov=True)
             
             # Compilar modelo
             model.compile(
@@ -265,6 +286,7 @@ class LucyTrainer:
             self.logger.info("✅ Modelo creado y compilado")
             self.logger.info(f"   - Capas: {len(model.layers)}")
             self.logger.info(f"   - Parámetros: {model.count_params()}")
+            self.logger.info(f"   - LR inicial: {learning_rate}")
             
             return model
             
@@ -306,6 +328,38 @@ class LucyTrainer:
                     mode='min'
                 )
                 callbacks.append(checkpoint)
+
+            # EarlyStopping
+            if self.enable_early_stopping:
+                patience = int(self.config.get('training', {}).get('early_stopping_patience', 10))
+                es = EarlyStopping(
+                    monitor='val_loss' if validation_data else 'loss',
+                    mode='min',
+                    patience=patience,
+                    restore_best_weights=True
+                )
+                callbacks.append(es)
+
+            # ReduceLROnPlateau
+            if self.enable_lr_schedule:
+                factor = float(self.config.get('training', {}).get('reduce_lr_factor', 0.5))
+                patience_rlr = int(self.config.get('training', {}).get('reduce_lr_patience', 5))
+                min_lr = float(self.config.get('training', {}).get('reduce_lr_min', 1e-5))
+                rlr = ReduceLROnPlateau(
+                    monitor='val_loss' if validation_data else 'loss',
+                    mode='min',
+                    factor=factor,
+                    patience=patience_rlr,
+                    min_lr=min_lr,
+                    verbose=1
+                )
+                callbacks.append(rlr)
+
+            # CSV Logger
+            if self.enable_csv_logger:
+                csv_path = self.data_paths['models_dir'] / 'training_log.csv'
+                csv_logger = CSVLogger(str(csv_path), append=False)
+                callbacks.append(csv_logger)
             
             # Entrenar modelo
             with suppress_tf_logs():
@@ -318,7 +372,7 @@ class LucyTrainer:
                     verbose=1 if self.logger.level <= logging.INFO else 0
                 )
             
-            # Evaluar modelo final
+            # Evaluar modelo final (en conjunto de entrenamiento)
             final_loss, final_accuracy = model.evaluate(train_x, train_y, verbose=0)
             
             self.logger.info(f"✅ Entrenamiento completado:")
@@ -473,9 +527,27 @@ class LucyTrainer:
             
             # 5. Entrenar modelo
             training_results = self.train_model(model, train_x, train_y, validation_data)
+            # Emitir métricas al sistema de logging (tiempo total de entrenamiento, si disponible)
+            try:
+                if 'history' in training_results and 'loss' in training_results['history']:
+                    epochs_completed = training_results.get('epochs_completed', len(training_results['history']['loss']))
+                    final_loss = float(training_results.get('final_loss', 0.0))
+                    final_acc = float(training_results.get('final_accuracy', 0.0))
+                    log_performance('training.epochs_completed', epochs_completed, unit='epochs')
+                    log_performance('training.final_loss', final_loss)
+                    log_performance('training.final_accuracy', final_acc)
+            except Exception:
+                pass
             
             # 6. Validar modelo
             validation_results = self.validate_model(model, train_x, train_y)
+            try:
+                if 'accuracy' in validation_results:
+                    log_performance('validation.accuracy', float(validation_results['accuracy']))
+                if 'average_confidence' in validation_results:
+                    log_performance('validation.avg_confidence', float(validation_results['average_confidence']))
+            except Exception:
+                pass
             
             # 7. Guardar modelo
             if not self.save_model_components(model):

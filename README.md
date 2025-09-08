@@ -136,6 +136,12 @@ python -m core.training --epochs 300 --batch-size 10
 python -m core.training --validate
 ```
 
+Optimización (Día 3):
+- EarlyStopping y ReduceLROnPlateau habilitados por defecto.
+- Guardado del mejor modelo y checkpoints por época en `data/models/`.
+- Historial CSV en `data/models/training_log.csv`.
+- Semillas fijadas para mayor reproducibilidad.
+
 ## 🔧 Desarrollo
 
 ### Ejecutar tests
