@@ -11,7 +11,15 @@
   - Nuevas dependencias en `requirements.txt`.
 - **Día 3**: Optimizar entrenamiento, validación, checkpoints, early stopping, LR schedule
 - **Día 4**: Base de datos conversaciones, contexto
+  - Implementado sistema completo de base de datos SQLite (`core/database.py`).
+  - Creadas tablas para conversaciones, sesiones, contexto, aprendizaje y métricas.
+  - Funciones para gestionar sesiones, almacenar conversaciones y manejar contexto.
+  - Sistema de expiración de contexto con tiempo configurable.
 - **Día 5**: Sistema configuración dinámico
+  - Implementado sistema de configuración con recarga en tiempo real (`core/config_manager.py`).
+  - Clase `ConfigWatcher` para monitorear cambios en archivos de configuración.
+  - Sistema de observadores para notificar cambios a componentes.
+  - Detección y registro de cambios específicos en la configuración.
 - **Día 6**: Testing y calidad código
 - **Día 7**: Documentación y deployment
 
