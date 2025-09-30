@@ -188,12 +188,12 @@ class LucyTrainer:
             
             # Procesar vocabulario
             self.words = [self.lemmatizer.lemmatize(word.lower()) 
-                         for word in self.words if word not in self.ignore_words]
+                        for word in self.words if word not in self.ignore_words]
             self.words = sorted(list(set(self.words)))
             self.classes = sorted(self.classes)
             
             self.logger.info(f"[OK] Datos cargados: {total_patterns} patrones, "
-                           f"{total_intents} intenciones, {len(self.words)} palabras únicas")
+                        f"{total_intents} intenciones, {len(self.words)} palabras únicas")
             
             return True
             
@@ -222,7 +222,7 @@ class LucyTrainer:
                 
                 # Lematizar patrones de palabras
                 word_patterns = [self.lemmatizer.lemmatize(word.lower()) 
-                               for word in word_patterns]
+                            for word in word_patterns]
                 
                 # Crear bolsa de palabras
                 for word in self.words:
@@ -242,7 +242,7 @@ class LucyTrainer:
             train_y = np.array([item[1] for item in training])
             
             self.logger.info(f"✅ Datos preparados: {train_x.shape[0]} muestras, "
-                           f"{train_x.shape[1]} características")
+                        f"{train_x.shape[1]} características")
             
             return train_x, train_y
             
@@ -296,7 +296,7 @@ class LucyTrainer:
     
     @measure_execution_time
     def train_model(self, model: Sequential, train_x: np.ndarray, 
-                   train_y: np.ndarray, validation_data: Tuple = None) -> Dict[str, Any]:
+                train_y: np.ndarray, validation_data: Tuple = None) -> Dict[str, Any]:
         """
         Entrena el modelo de red neuronal
         
@@ -427,7 +427,7 @@ class LucyTrainer:
             return False
     
     def validate_model(self, model: Sequential, train_x: np.ndarray, 
-                      train_y: np.ndarray) -> Dict[str, Any]:
+                    train_y: np.ndarray) -> Dict[str, Any]:
         """
         Valida el modelo entrenado
         
@@ -484,7 +484,7 @@ class LucyTrainer:
             return {'error': str(e)}
     
     def run_full_training(self, languages: List[str] = None, 
-                         force_retrain: bool = False) -> bool:
+                        force_retrain: bool = False) -> bool:
         """
         Ejecuta el proceso completo de entrenamiento
         
@@ -520,7 +520,7 @@ class LucyTrainer:
                 )
                 validation_data = (val_x, val_y)
                 self.logger.info(f"📊 División de datos: "
-                               f"{len(train_x)} entrenamiento, {len(val_x)} validación")
+                            f"{len(train_x)} entrenamiento, {len(val_x)} validación")
             
             # 4. Crear modelo
             model = self.create_model(len(train_x[0]), len(train_y[0]))
@@ -636,17 +636,17 @@ def main():
     
     parser = argparse.ArgumentParser(description="Entrenamiento de Lucy AI")
     parser.add_argument('--languages', nargs='+', default=None,
-                       help='Idiomas a entrenar (ej: es en)')
+                    help='Idiomas a entrenar (ej: es en)')
     parser.add_argument('--force', action='store_true',
-                       help='Forzar re-entrenamiento')
+                    help='Forzar re-entrenamiento')
     parser.add_argument('--config', type=str, default=None,
-                       help='Archivo de configuración personalizado')
+                    help='Archivo de configuración personalizado')
     parser.add_argument('--epochs', type=int, default=None,
-                       help='Número de épocas de entrenamiento')
+                    help='Número de épocas de entrenamiento')
     parser.add_argument('--batch-size', type=int, default=None,
-                       help='Tamaño de batch')
+                    help='Tamaño de batch')
     parser.add_argument('--validate', action='store_true',
-                       help='Solo validar modelo existente')
+                    help='Solo validar modelo existente')
     
     args = parser.parse_args()
     
