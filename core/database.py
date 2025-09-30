@@ -136,7 +136,7 @@ class ConversationDB:
                 conn.close()
                 
     def create_session(self, user_name: str = None, preferred_language: str = 'es', 
-                      settings: Dict[str, Any] = None) -> str:
+                    settings: Dict[str, Any] = None) -> str:
         """
         Crea una nueva sesión de conversación
         
@@ -163,8 +163,8 @@ class ConversationDB:
         return session_id
         
     def store_conversation(self, session_id: str, user_input: str, bot_response: str,
-                          language: str, confidence: float = None, intent: str = None,
-                          response_time: float = None, context: Dict[str, Any] = None) -> int:
+                        language: str, confidence: float = None, intent: str = None,
+                        response_time: float = None, context: Dict[str, Any] = None) -> int:
         """
         Almacena una conversación en la base de datos
         
@@ -201,7 +201,7 @@ class ConversationDB:
                 intent, response_time, context)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (session_id, user_input, bot_response, language, confidence, 
-                 intent, response_time, context_json))
+                intent, response_time, context_json))
             
             conversation_id = cursor.lastrowid
             
@@ -209,7 +209,7 @@ class ConversationDB:
         return conversation_id
         
     def set_context(self, session_id: str, key: str, value: Any, 
-                   expiry_minutes: int = None) -> None:
+                expiry_minutes: int = None) -> None:
         """
         Establece un valor de contexto para una sesión
         
