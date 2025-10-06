@@ -11,9 +11,29 @@ import sys
 import logging
 import time
 import langdetect
+import datetime
 from contextlib import contextmanager
 from functools import wraps
 from typing import List, Dict, Any, Optional
+
+def get_greeting_by_time() -> str:
+    """
+    Determina el saludo adecuado basado en la hora actual.
+    
+    Returns:
+        str: Saludo apropiado según la hora del día:
+            - "Buenos días": 5:00 AM - 11:59 AM
+            - "Buenas tardes": 12:00 PM - 6:59 PM
+            - "Buenas noches": 7:00 PM - 4:59 AM
+    """
+    current_hour = datetime.datetime.now().hour
+    
+    if 5 <= current_hour < 12:
+        return "Buenos días"
+    elif 12 <= current_hour < 19:
+        return "Buenas tardes"
+    else:
+        return "Buenas noches"
 
 # Configurar TensorFlow para suprimir mensajes
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'

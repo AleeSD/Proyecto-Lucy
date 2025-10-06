@@ -21,7 +21,9 @@ import os
 import sys
 import argparse
 import logging
+import datetime
 from pathlib import Path
+from colorama import init, Fore, Style
 
 # Configurar UTF-8 para Windows
 if sys.platform == "win32":
@@ -65,6 +67,9 @@ class LucyApplication:
             config_path: Ruta al archivo de configuración personalizado
         """
         try:
+            # Inicializar colorama para soporte de colores en terminal
+            init()
+            
             # Configurar logging básico temporal
             logging.basicConfig(level=logging.INFO)
             self.logger = logging.getLogger(__name__)
@@ -82,6 +87,13 @@ class LucyApplication:
             self.db = None
             self.lucy_ai = None
             self.session_id = create_session_id()
+            
+            # Configuración de visualización de metadatos
+            self.show_info = False
+            self.show_status = False
+            
+            # Crear archivo de registro de cambios si no existe
+            self._setup_change_log()
             
             self._initialize_components()
             
@@ -132,7 +144,12 @@ class LucyApplication:
             print("\n" + "="*60)
             print("[ROBOT] Lucy AI - Asistente Inteligente")
             print("="*60)
-            print("Hola! Soy Lucy, tu asistente de IA.")
+            
+            # Obtener saludo según la hora del día
+            from core.utils import get_greeting_by_time
+            greeting = get_greeting_by_time()
+            
+            print(f"{greeting}! Soy Lucy, tu asistente de IA.")
             print("Puedo ayudarte en español e inglés.")
             print("\nComandos especiales:")
             print("• /help    - Mostrar ayuda")
@@ -163,7 +180,29 @@ class LucyApplication:
                     response = self.lucy_ai.process_message(user_input)
                     response_time = performance_monitor.end_timer('response')
                     
+                    # Obtener fecha y hora actual
+                    current_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    
+                    # Mostrar respuesta con formato mejorado
                     print(f"\n[ROBOT] Lucy: {response}")
+                    
+                    # Mostrar metadatos de información si está activado
+                    if self.show_info:
+                        print(f"{Fore.GREEN}[CLOCK] Tiempo de respuesta: {response_time:.2f}s")
+                        print(f"[DATE] {current_time}")
+                        print(f"[INTENT] {self.lucy_ai.get_last_intent() or 'Desconocido'} ({self.lucy_ai.get_last_confidence():.2%}){Style.RESET_ALL}")
+                    
+                    # Mostrar estado de conversación si está activado
+                    if self.show_status and self.db:
+                        try:
+                            history = self.db.get_conversation_history(self.session_id, limit=3)
+                            if history and len(history) > 1:  # Excluir la conversación actual
+                                print(f"{Fore.CYAN}[STATUS] Historial reciente:")
+                                for i, conv in enumerate(history[:-1], 1):  # Excluir la última (actual)
+                                    print(f"  {i}. Usuario: {conv['user_input'][:50]}...")
+                                    print(f"     Lucy: {conv['bot_response'][:50]}...{Style.RESET_ALL}")
+                        except Exception as e:
+                            self.logger.error(f"Error mostrando historial: {e}")
                     
                     # Log de rendimiento (Día 02)
                     try:
@@ -171,10 +210,6 @@ class LucyApplication:
                                         tags={'feature': 'interactive_chat'})
                     except Exception:
                         pass
-
-                    # Mostrar tiempo de respuesta si está configurado
-                    if self.config.get('ui', {}).get('show_response_time', False):
-                        print(f"   [CLOCK] Tiempo de respuesta: {response_time:.2f}s")
                     
                     # Log estructurado de conversación (Día 02)
                     try:
@@ -229,6 +264,33 @@ class LucyApplication:
             log_error_with_context(e, {'mode': 'interactive_chat'})
             print("[X] Error crítico en modo interactivo")
     
+    def _setup_change_log(self):
+        """Crea el archivo de registro de cambios si no existe"""
+        log_dir = Path(self.config_manager.get_path('logs_dir'))
+        log_dir.mkdir(exist_ok=True, parents=True)
+        
+        self.change_log_path = log_dir / 'cambios_lucy.log'
+        
+        if not self.change_log_path.exists():
+            with open(self.change_log_path, 'w', encoding='utf-8') as f:
+                f.write("=== REGISTRO DE CAMBIOS DE LUCY AI ===\n")
+                f.write(f"Creado: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+                
+        # Registrar cambios implementados
+        self._log_change("Implementación de sistema de respuesta optimizado")
+        self._log_change("Añadidos comandos /info y /status para mostrar/ocultar metadatos")
+        self._log_change("Implementado formato de respuesta con colores y metadatos")
+        self._log_change("Optimización para evitar saludos repetitivos")
+    
+    def _log_change(self, message):
+        """Registra un cambio en el archivo de registro"""
+        try:
+            timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            with open(self.change_log_path, 'a', encoding='utf-8') as f:
+                f.write(f"[{timestamp}] {message}\n")
+        except Exception as e:
+            self.logger.error(f"Error al registrar cambio: {e}")
+    
     def _handle_command(self, command: str) -> bool:
         """
         Maneja comandos especiales del usuario
@@ -262,6 +324,16 @@ class LucyApplication:
         elif command == '/debug':
             self._show_debug_info()
         
+        elif command == '/info':
+            self.show_info = not self.show_info
+            status = "activada" if self.show_info else "desactivada"
+            print(f"{Fore.GREEN}[INFO] Información de respuesta {status}{Style.RESET_ALL}")
+        
+        elif command == '/status':
+            self.show_status = not self.show_status
+            status = "activado" if self.show_status else "desactivado"
+            print(f"{Fore.GREEN}[STATUS] Estado de conversación {status}{Style.RESET_ALL}")
+        
         else:
             print(f"[?] Comando desconocido: {command}")
             print("   Escribe /help para ver comandos disponibles")
@@ -275,6 +347,8 @@ class LucyApplication:
         print("• /config  - Ver configuración actual")
         print("• /stats   - Ver estadísticas de sesión")
         print("• /clear   - Limpiar contexto de conversación")
+        print("• /info    - Mostrar/ocultar información de respuesta")
+        print("• /status  - Mostrar/ocultar historial de conversación")
         print("• /debug   - Información de debug")
         print("• /exit    - Salir del programa")
     

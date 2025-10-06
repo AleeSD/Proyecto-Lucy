@@ -171,6 +171,46 @@ class LucyAI:
             self.logger.error(f"Error cargando intenciones: {e}")
             raise
     
+    def autocomplete_message(self, partial_message: str) -> List[str]:
+        """
+        Proporciona sugerencias de autocompletado basadas en un mensaje parcial
+        
+        Args:
+            partial_message: Mensaje parcial del usuario
+            
+        Returns:
+            Lista de posibles autocompletados
+        """
+        if not partial_message or not partial_message.strip():
+            return []
+            
+        # Sanitizar entrada
+        partial_message = partial_message.strip().lower()
+        
+        # Detectar idioma
+        lang = get_language(partial_message)
+        if lang not in self.intents:
+            lang = self.config.get('model', {}).get('default_language', 'es')
+            
+        # Buscar patrones que coincidan con el mensaje parcial
+        suggestions = []
+        
+        if lang in self.intents:
+            for intent in self.intents[lang].get('intents', []):
+                for pattern in intent.get('patterns', []):
+                    # Normalizar patrón para comparación (quitar signos de puntuación)
+                    normalized_pattern = ''.join(c.lower() for c in pattern if c.isalnum() or c.isspace())
+                    
+                    if normalized_pattern.startswith(partial_message) or partial_message in normalized_pattern:
+                        if pattern not in suggestions:
+                            suggestions.append(pattern)
+                            
+                    # Si ya tenemos suficientes sugerencias, detenemos la búsqueda
+                    if len(suggestions) >= 5:
+                        break
+                        
+        return suggestions[:5]  # Limitar a 5 sugerencias
+    
     @measure_execution_time
     def process_message(self, message: str, context: Dict[str, Any] = None) -> str:
         """
@@ -263,13 +303,76 @@ class LucyAI:
                     })
             
             # Ordenar por probabilidad descendente
-            results.sort(key=lambda x: x['probability'], reverse=True)
-            
-            return results
+            return sorted(results, key=lambda x: x['probability'], reverse=True)
             
         except Exception as e:
-            self.logger.error(f"Error en predicción: {e}")
-            return []
+            self.logger.error(f"Error en predicción: {e}", exc_info=True)
+            return self._predict_intent_fallback(message)
+    
+    def _predict_intent_fallback(self, message: str) -> List[Dict[str, Any]]:
+        """
+        Método alternativo para predecir intención cuando no hay modelo ML
+        
+        Args:
+            message: Mensaje a analizar
+            
+        Returns:
+            Lista de predicciones ordenadas por confianza
+        """
+        try:
+            # Normalizar mensaje (quitar signos de puntuación y convertir a minúsculas)
+            normalized_message = ''.join(c.lower() for c in message if c.isalnum() or c.isspace())
+            words = normalized_message.split()
+            
+            # Resultados de coincidencia
+            matches = []
+            
+            # Buscar coincidencias en los patrones de intención
+            if self.current_language in self.intents:
+                for intent in self.intents[self.current_language].get('intents', []):
+                    intent_name = intent.get('tag', 'unknown')
+                    patterns = intent.get('patterns', [])
+                    
+                    # Calcular puntuación para cada patrón
+                    best_score = 0
+                    for pattern in patterns:
+                        # Normalizar patrón
+                        normalized_pattern = ''.join(c.lower() for c in pattern if c.isalnum() or c.isspace())
+                        pattern_words = normalized_pattern.split()
+                        
+                        # Calcular coincidencia exacta
+                        if normalized_message == normalized_pattern:
+                            score = 1.0
+                        else:
+                            # Calcular coincidencia de palabras
+                            common_words = sum(1 for word in words if word in pattern_words)
+                            total_words = len(set(words + pattern_words))
+                            score = common_words / total_words if total_words > 0 else 0
+                            
+                            # Bonificación por coincidencia de inicio
+                            if normalized_message.startswith(normalized_pattern) or normalized_pattern.startswith(normalized_message):
+                                score += 0.2
+                                
+                            # Bonificación por coincidencia de palabras clave
+                            if any(word in normalized_pattern for word in words if len(word) > 3):
+                                score += 0.1
+                        
+                        # Actualizar mejor puntuación para esta intención
+                        best_score = max(best_score, score)
+                    
+                    # Añadir a resultados si supera umbral
+                    if best_score > 0.3:
+                        matches.append({
+                            'intent': intent_name,
+                            'probability': best_score
+                        })
+            
+            # Ordenar por probabilidad descendente
+            return sorted(matches, key=lambda x: x['probability'], reverse=True)
+            
+        except Exception as e:
+            self.logger.error(f"Error en predicción fallback: {e}", exc_info=True)
+            return [{'intent': 'fallback', 'probability': 1.0}]
 
     def _predict_intent_fallback(self, message: str) -> List[Dict[str, Any]]:
         """
@@ -352,8 +455,18 @@ class LucyAI:
                 if intent_data.get('tag') == intent:
                     responses = intent_data.get('responses', [])
                     if responses:
-                        # Seleccionar respuesta aleatoria
-                        response = random.choice(responses)
+                        # Evitar repetir la última respuesta para esta intención si hay más de una opción
+                        if len(responses) > 1 and hasattr(self, 'last_responses') and intent in self.last_responses:
+                            filtered_responses = [r for r in responses if r != self.last_responses.get(intent)]
+                            response = random.choice(filtered_responses)
+                        else:
+                            # Seleccionar respuesta aleatoria
+                            response = random.choice(responses)
+                        
+                        # Guardar esta respuesta para evitar repetirla la próxima vez
+                        if not hasattr(self, 'last_responses'):
+                            self.last_responses = {}
+                        self.last_responses[intent] = response
                         
                         # Personalizar respuesta si es posible
                         return self._personalize_response(response, message, context)
