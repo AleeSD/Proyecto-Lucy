@@ -1,235 +1,229 @@
 # Plan de Desarrollo - Proyecto Lucy
 ## Asistente de IA de Escritorio Inteligente
 
+Este documento define el objetivo, la arquitectura, las estrategias y las acciones para desarrollar Lucy con un flujo lógico y trazable: de los objetivos a acciones, entregables, pruebas y métricas. Todas las referencias de módulos usan la estructura `src/lucy/*`.
+
+### Objetivo General
+- Construir un asistente de IA local, extensible y confiable, con respuestas rápidas, capacidad de aprendizaje y observabilidad completa.
+
+### Arquitectura y Componentes
+- `src/lucy/lucy_ai.py`: motor de conversación, detección de intención y generación de respuesta.
+- `src/lucy/database.py`: `ConversationDB` para sesiones, contexto y historial.
+- `src/lucy/config_manager.py`: `ConfigManager` y `ConfigWatcher` para configuración dinámica.
+- `src/lucy/logging_system.py`: logging estructurado, métricas y trazabilidad.
+- `src/lucy/training.py`: pipeline de entrenamiento y evaluación de modelos.
+- `src/lucy/utils.py`: utilidades (normalización de texto, saludos, etc.).
+
+### Diagrama de Arquitectura (alto nivel)
+```
+[Usuario]
+   │
+   ▼
+[LucyAI] ──► [ConfigManager]
+   │             │
+   │             └── Carga y aplica configuración (runtime)
+   │
+   ├─► [Intent Detection / Respuesta]
+   │        │
+   │        └── Usa modelos y reglas
+   │
+   ├─► [ConversationDB]
+   │        └── Guarda/recupera contexto e historial
+   │
+   └─► [LoggingSystem]
+            └── Logs, métricas y auditoría
+
+[Training] ───► [Modelos en disco] ───► [LucyAI]
+```
+
+### Flujo End-to-End (conexión entre componentes)
+1. Entrada del usuario → normalización → detección de idioma → intención.
+2. Generación de respuesta → actualización de contexto → persistencia en `ConversationDB`.
+3. Logging y métricas (latencia, confianza, idioma, intención, errores).
+4. Configuración dinámica puede ajustar comportamiento (p. ej., límites de historial, idioma preferido).
+5. Entrenamiento produce/actualiza modelos → Lucy los carga bajo demanda.
+
+### Estrategia de Implementación
+- Iterar por fases, asegurando en cada día: objetivo claro, acciones atómicas, entregables verificables, criterios de aceptación, métricas y dependencias explícitas.
+- Conectar tareas con pruebas (`tests/`) y documentación (`docs/`), con puertas de calidad (coverage y lint).
+
+---
+
 ### Fase 1: Optimización y Base Sólida (Días 1-7)
 
 **Día 1: Reestructuración y Limpieza del Código**
-- Reorganizar estructura de carpetas
-- Corregir imports y rutas
-- Implementar manejo de errores robusto
-- Crear sistema de configuración centralizado
+- Objetivo: consolidar la estructura en `src/lucy` y sanear imports/errores.
+- Estrategia: mover módulos, normalizar rutas y manejo de errores.
+- Acciones:
+  - Reorganizar carpetas a `src/lucy/*` y actualizar imports.
+  - Normalizar separadores en `ConfigManager.get_path` y paths relativos.
+  - Manejo de `FileNotFoundError` en `LucyAI` para modelos y datos.
+- Entregables: código consistente y ejecutable; documentación de estructura.
+- Criterios de aceptación: ejecución local sin errores; tests básicos pasan.
+- Métricas: tiempo de arranque; conteo de errores en logs.
+- Dependencias: ninguna.
 
 **Día 2: Sistema de Logging y Monitoreo**
-- Implementar logging estructurado
-- Sistema de métricas de rendimiento
-- Manejo de excepciones mejorado
-- Documentación de código
+- Objetivo: observabilidad con logs estructurados y métricas.
+- Estrategia: configurar `logging.yaml`, niveles, formatos y sumarios.
+- Acciones:
+  - Implementar `LoggingSystem` y hooks en `LucyAI` y `Database`.
+  - Métricas: latencia, confidencia, intención, volumen por idioma.
+  - Exportar `lucy.logging_system` para import claro.
+- Entregables: panel básico de métricas en archivo y/o consola.
+- Criterios de aceptación: logs presentes por ruta crítica; métricas visibles.
+- Métricas: latencia promedio < 2s; errores críticos = 0.
+- Dependencias: Día 1.
 
 **Día 3: Mejora del Sistema de Entrenamiento**
-- Optimización del pipeline de entrenamiento
-- Sistema de validación de datos
-- Métricas de evaluación del modelo
-- Guardado automático de checkpoints y mejor modelo
-- EarlyStopping y ReduceLROnPlateau
-- CSVLogger y semillas para reproducibilidad
+- Objetivo: reproducibilidad y calidad de modelos.
+- Estrategia: EarlyStopping, ReduceLROnPlateau, CSVLogger; validación de datos.
+- Acciones:
+  - `training.py`: pipeline con semillas y guardado de mejor modelo.
+  - Validación de `data/intents/*.json` y split train/val.
+  - Métricas de evaluación (accuracy, F1) y reporte.
+- Entregables: modelo entrenado y artefactos de evaluación.
+- Criterios de aceptación: métricas mínimas; carga del modelo desde `LucyAI`.
+- Métricas: F1 > 0.80 en intents base.
+- Dependencias: Día 2.
 
 **Día 4: Base de Datos de Conversaciones**
-- Implementar SQLite para historial
-- Sistema de contexto conversacional
-- Persistencia de preferencias de usuario
-- Análisis de patrones de uso
+- Objetivo: persistencia y contexto estable.
+- Estrategia: `ConversationDB` con sesiones, límites de historial y expiración de contexto.
+- Acciones:
+  - Implementar `save_conversation(...)` y recuperación de historial.
+  - API de contexto: `set_context`, `get_session_context`.
+  - Índices y consultas de búsqueda básicas.
+- Entregables: historial consultable por sesión; contexto operativo.
+- Criterios de aceptación: pruebas en `tests/test_lucy_ai.py` pasan.
+- Métricas: tiempo de escritura/lectura; tamaño medio de sesión.
+- Dependencias: Día 1.
 
 **Día 5: Sistema de Configuración Dinámico**
-- Archivo de configuración JSON/YAML
-- Configuración en tiempo real
-- Perfiles de usuario
-- Personalización de respuestas
+- Objetivo: ajustar comportamiento en tiempo real.
+- Estrategia: `ConfigWatcher` sobre `config/config.json` con observadores.
+- Acciones:
+  - Hot-reload de parámetros (p. ej., idioma, límites, respuestas).
+  - Observers conectados en `LucyAI`, `LoggingSystem`, `Database`.
+- Entregables: cambio de config sin reinicio.
+- Criterios de aceptación: modificación de JSON refleja cambios inmediatos.
+- Métricas: latencia de propagación de cambios < 500 ms.
+- Dependencias: Días 1-2.
 
 **Día 6: Testing y Calidad de Código**
-- Suite de pruebas unitarias
-- Pruebas de integración
-- Cobertura de código
-- CI/CD básico
+- Objetivo: asegurar estabilidad con pruebas y cobertura.
+- Estrategia: `pytest`, pruebas de integración, cobertura y CI básico.
+- Acciones:
+  - Ampliar `tests/` para `LucyAI`, `Database`, `ConfigManager` y `Training`.
+  - Configurar cobertura y reporte; umbral mínimo 85% (camino a 90%).
+- Entregables: suite de pruebas y pipeline local de CI.
+- Criterios de aceptación: `pytest -q` sin fallos; cobertura >= 85%.
+- Métricas: cobertura; tasa de fallos por commit.
+- Dependencias: Días 1-5.
 
 **Día 7: Documentación y Deployment**
-- Documentación completa
-- Scripts de instalación
-- Containerización con Docker
-- Guías de uso
+- Objetivo: facilitar instalación, uso y mantenimiento.
+- Estrategia: README, guías en `docs/`, scripts de arranque.
+- Acciones:
+  - Actualizar docs con `src/lucy/*` y ejemplos reales.
+  - Scripts `run_lucy.*` y guía de troubleshooting.
+- Entregables: documentación completa y scripts funcionales.
+- Criterios de aceptación: instalación y ejecución guiadas sin bloqueos.
+- Métricas: tiempo de onboarding < 30 min.
+- Dependencias: Días 1-6.
+
+---
 
 ### Fase 2: Funcionalidades Core (Días 8-14)
 
+Para cada día se aplicará el mismo esquema (Objetivo, Estrategia, Acciones, Entregables, Criterios, Métricas, Dependencias). A continuación, se detallan los puntos críticos de implementación.
+
 **Día 8: Sistema de Plugins**
-- Arquitectura modular
-- Cargador dinámico de plugins
-- API para desarrolladores
-- Plugin básico de ejemplo
+- Estrategia: cargador dinámico con registro y contratos claros (interfaces).
+- Acciones: módulo `plugins/` con descubrimiento y sandbox básico; ejemplo funcional.
+- Dependencias: Config estable (Día 5) y Logging (Día 2).
 
 **Día 9: Integración con APIs Externas**
-- Conexión a servicios web
-- Sistema de autenticación
-- Rate limiting
-- Cache de respuestas
+- Estrategia: clientes HTTP con autenticación, rate limiting y cache.
+- Acciones: capa `services/` y pruebas contra sandbox/mock.
 
-**Día 10: Procesamiento de Lenguaje Natural Avanzado**
-- Análisis de sentimientos
-- Extracción de entidades
-- Reconocimiento de intenciones complejas
-- Generación de respuestas contextuales
+**Día 10: PLN Avanzado**
+- Estrategia: pipeline con spaCy/Transformers; normalización y scoring.
+- Acciones: nuevas funciones en `lucy_ai.py` y modelos en `src/test_models/`.
 
-**Día 11: Sistema de Memoria a Largo Plazo**
-- Base de conocimiento
-- Aprendizaje incremental
-- Vectorización de conocimientos
-- Búsqueda semántica
+**Día 11: Memoria a Largo Plazo**
+- Estrategia: almacenamiento vectorial y búsqueda semántica.
+- Acciones: módulo `memory/` y conexión con `ConversationDB`.
 
 **Día 12: Interface Web Básica**
-- API REST
-- Frontend simple con HTML/JS
-- WebSocket para chat en tiempo real
-- Autenticación básica
+- Estrategia: API REST (FastAPI) y frontend mínimo.
+- Acciones: endpoints para chat/contexto; WebSocket para tiempo real.
 
 **Día 13: Comandos de Sistema**
-- Ejecución de comandos del OS
-- Gestión de archivos
-- Información del sistema
-- Automatización básica
+- Estrategia: capa segura con whitelist y auditoría.
+- Acciones: integración con `LoggingSystem` y prompts claros.
 
-**Día 14: Sistema de Notificaciones**
-- Recordatorios
-- Alertas programadas
-- Integración con calendario
-- Notificaciones push
+**Día 14: Notificaciones**
+- Estrategia: programador de tareas y conectores de calendario.
+- Acciones: colas ligeras y persistencia de recordatorios.
+
+---
 
 ### Fase 3: Inteligencia Avanzada (Días 15-21)
+- Enfoque incremental con validaciones fuertes; cada subcomponente integra logging y pruebas.
+- Prioridades: datos (Día 15), generación (Día 16), voz (Día 17), visión (Día 18), cloud (Día 19), recomendaciones (Día 20), automatización (Día 21).
 
-**Día 15: Análisis de Datos**
-- Procesamiento de CSVs/Excel
-- Visualizaciones básicas
-- Estadísticas descriptivas
-- Reportes automáticos
-
-**Día 16: Generación de Contenido**
-- Templates de documentos
-- Generación de código
-- Escritura creativa
-- Resúmenes automáticos
-
-**Día 17: Reconocimiento de Voz**
-- Speech-to-text
-- Comandos por voz
-- Respuestas de audio
-- Procesamiento en tiempo real
-
-**Día 18: Visión por Computadora Básica**
-- Análisis de imágenes
-- Extracción de texto de imágenes
-- Reconocimiento de objetos
-- Generación de descripciones
-
-**Día 19: Integración con Servicios Cloud**
-- Google Drive/OneDrive
-- Servicios de email
-- Calendarios online
-- Sincronización de datos
-
-**Día 20: Sistema de Recomendaciones**
-- Análisis de preferencias
-- Sugerencias personalizadas
-- Aprendizaje de patrones
-- Predicciones básicas
-
-**Día 21: Automatización Avanzada**
-- Scripts programables
-- Workflows automáticos
-- Triggers y eventos
-- Macros personalizables
+---
 
 ### Fase 4: Integración y Distribución (Días 22-30)
+- Cerrar APIs, GUI desktop, web completa, seguridad y QA; culminar en release y plan de mantenimiento.
 
-**Día 22: API Completa para Desarrolladores**
-- SDK en Python
-- SDK en JavaScript
-- Documentación de API
-- Ejemplos de integración
+---
 
-**Día 23: Interface Gráfica Desktop**
-- GUI con PyQt/Tkinter
-- Systray integration
-- Shortcuts de teclado
-- Themes y personalización
+### Mapa de Trazabilidad (Objetivos → Acciones → Pruebas → Métricas)
+- Objetivo: "Respuestas rápidas" → Acciones: mejoras en LucyAI, cache → Pruebas: latencia y carga → Métricas: p95 < 2s.
+- Objetivo: "Confiabilidad" → Acciones: cobertura de pruebas → Pruebas: unitarias/integración → Métricas: cobertura ≥ 90% (meta).
+- Objetivo: "Aprendizaje" → Acciones: training reproducible → Pruebas: evaluación de modelo → Métricas: F1 ≥ 0.85.
 
-**Día 24: Aplicación Web Completa**
-- Frontend moderno (React/Vue)
-- Dashboard de administración
-- Gestión de usuarios
-- Deploy en la nube
+### Calidad, Testing y CI
+- Pruebas: `pytest -q`; integración para `LucyAI`, `Database`, `ConfigManager`, `Training`.
+- Cobertura: umbral mínimo 85% (subida progresiva a 90%).
+- CI local: scripts en `run_lucy.*` y verificación previa a release.
 
-**Día 25: Sistema de Plugins Avanzado**
-- Marketplace de plugins
-- Instalación automática
-- Actualizaciones
-- Sandboxing de seguridad
+### Seguridad y Privacidad
+- Logs sin datos sensibles; cifrado en repositorios persistentes.
+- Autenticación para APIs; auditoría de accesos.
 
-**Día 26: Optimización de Rendimiento**
-- Profiling de código
-- Optimización de memoria
-- Paralelización
-- Cache inteligente
+### Riesgos y Mitigación
+- Datos inconsistentes → validadores y pruebas de datos.
+- Rendimiento insuficiente → profiling y cache.
+- Dependencias externas → mock y aislamiento.
 
-**Día 27: Seguridad y Privacidad**
-- Encriptación de datos
-- Autenticación robusta
-- Auditoría de accesos
-- Cumplimiento GDPR
-
-**Día 28: Monitoreo y Analytics**
-- Dashboard de métricas
-- Alertas de sistema
-- Análisis de uso
-- Reportes de rendimiento
-
-**Día 29: Testing Avanzado y QA**
-- Pruebas de carga
-- Testing de seguridad
-- Pruebas de usabilidad
-- Automatización de QA
-
-**Día 30: Release y Distribución**
-- Empaquetado final
-- Documentación de release
-- Marketing básico
-- Plan de mantenimiento
-
-### Tecnologías por Implementar
-
-**Backend:**
-- FastAPI para APIs
-- SQLAlchemy para ORM
-- Redis para cache
-- Celery para tareas async
-
-**Frontend:**
-- React/Vue.js
-- WebSocket connections
-- Progressive Web App
-
-**IA/ML:**
-- Transformers para NLP
-- spaCy para análisis
-- scikit-learn para ML
-- OpenCV para visión
-
-**Infraestructura:**
-- Docker containers
-- GitHub Actions
-- AWS/GCP deployment
-- Monitoring con Prometheus
-
-### Consideraciones de Arquitectura
-
-**Modularidad:** Cada componente debe ser independiente
-**Escalabilidad:** Diseño para crecer horizontalmente
-**Mantenibilidad:** Código limpio y bien documentado
-**Seguridad:** Principios de seguridad desde el diseño
-**Performance:** Optimización constante
-**UX:** Experiencia de usuario fluida
+### Tecnologías por Implementar (mapeo)
+- Backend: FastAPI (Fase 2 Día 12), SQLAlchemy (DB avanzada), Redis (cache), Celery (tareas async).
+- Frontend: React/Vue (Fase 4 Día 24), WebSocket (Día 12), PWA.
+- IA/ML: Transformers, spaCy, scikit-learn; OpenCV (Fase 3 Día 18).
+- Infra: Docker, GitHub Actions, AWS/GCP, Prometheus.
 
 ### Métricas de Éxito
+- Tiempo de respuesta < 2 segundos (p95 en escenarios comunes).
+- Precisión de respuestas > 85% (PLN base; objetivo 90% en avance).
+- Cobertura de pruebas > 90% (meta; umbral operativo 85%).
+- Documentación completa al 100% (actualizada por cambios de código).
+- 0 vulnerabilidades críticas (escaneo regular).
+- Soporte para 10+ idiomas (detección y respuestas consistentes).
 
-- Tiempo de respuesta < 2 segundos
-- Precisión de respuestas > 85%
-- Cobertura de pruebas > 90%
-- Documentación completa al 100%
-- 0 vulnerabilidades críticas
-- Soporte para 10+ idiomas
+### Diagrama de Flujo Operativo (resumen)
+```
+Usuario → LucyAI → Detección de intención → Generación de respuesta
+          │              │                          │
+          │              └── usa modelos y reglas   └── texto final
+          ├─► ConversationDB (historial y contexto)
+          ├─► LoggingSystem (métricas y auditoría)
+          └─► ConfigManager (ajustes en runtime)
+```
+
+### Notas de Interconexión
+- Cada funcionalidad nueva debe registrar métricas y respetar configuración dinámica.
+- Cambios en modelos implican actualización de `LucyAI` y validación en `tests/`.
+- DB y Config son dependencias transversales; cualquier cambio requiere verificación de compatibilidad.
