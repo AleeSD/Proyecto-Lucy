@@ -71,7 +71,7 @@ run_lucy.bat
 
 ### Prueba Rápida
 ```bash
-python test_lucy.py
+python -m pytest -q
 ```
 
 ## 💬 Comandos Especiales
@@ -89,17 +89,28 @@ Una vez en el chat interactivo, puedes usar estos comandos:
 
 ```
 Proyecto-Lucy/
-├── lucy.py                 # Punto de entrada principal
+├── lucy.py                 # Punto de entrada principal (CLI)
 ├── requirements.txt        # Dependencias del proyecto
-├── config/
-│   └── config.json        # Configuración del sistema
-├── core/                  # Módulos principales
+├── src/
+│   └── lucy/               # Paquete principal
+│       ├── __init__.py
+│       ├── lucy_ai.py         # Motor de IA principal
+│       ├── config_manager.py  # Gestor de configuración dinámico
+│       ├── database.py        # Base de datos SQLite
+│       ├── logging_system.py  # Sistema de logging y monitoreo
+│       ├── training.py        # Sistema de entrenamiento
+│       └── utils.py           # Utilidades generales
+├── core/                  # Capa de compatibilidad (reexporta desde src/lucy)
 │   ├── __init__.py
-│   ├── lucy_ai.py         # Motor de IA principal
-│   ├── config_manager.py  # Gestor de configuración
-│   ├── database.py        # Base de datos SQLite
-│   ├── training.py        # Sistema de entrenamiento
-│   └── utils.py           # Utilidades generales
+│   ├── lucy_ai.py
+│   ├── config_manager.py
+│   ├── database.py
+│   ├── logging_system.py
+│   ├── training.py
+│   └── utils.py
+├── config/
+│   ├── config.json        # Configuración del sistema
+│   └── logging.yaml       # Configuración avanzada de logs
 ├── data/
 │   ├── intents/           # Archivos de intenciones
 │   │   ├── intents_es.json
@@ -108,6 +119,8 @@ Proyecto-Lucy/
 ├── logs/                  # Archivos de log
 └── tests/                 # Tests unitarios
 ```
+
+Nota: `core/` se mantiene temporalmente como alias para asegurar compatibilidad con código y tests existentes. Se recomienda migrar a imports desde `lucy.*`.
 
 ## ⚙️ Configuración
 

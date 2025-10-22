@@ -1,7 +1,7 @@
 # Día 05 - Sistema de Configuración Dinámico
 
 ## Qué se implementó
-- Sistema de configuración dinámico en `core/config_manager.py`.
+- Sistema de configuración dinámico en `src/lucy/config_manager.py`.
 - Clase `ConfigWatcher` para monitorear cambios en archivos de configuración.
 - Recarga automática de configuración en tiempo real.
 - Sistema de observadores para notificar cambios a componentes.

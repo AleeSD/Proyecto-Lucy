@@ -5,18 +5,18 @@
 ### **Semana 1: Base y Optimización**
 - **Día 1**: Reestructurar código, corregir imports, manejo de errores
 - **Día 2**: Sistema de logging y monitoreo
-  - Implementado gestor central de logging (`core/logging_system.py`).
+  - Implementado gestor central de logging (`src/lucy/logging_system.py`).
   - Integrado en `lucy.py` con métricas y conversaciones.
   - Configuración en `config/logging.yaml` (rotación, formatos, niveles).
   - Nuevas dependencias en `requirements.txt`.
 - **Día 3**: Optimizar entrenamiento, validación, checkpoints, early stopping, LR schedule
 - **Día 4**: Base de datos conversaciones, contexto
-  - Implementado sistema completo de base de datos SQLite (`core/database.py`).
+  - Implementado sistema completo de base de datos SQLite (`src/lucy/database.py`).
   - Creadas tablas para conversaciones, sesiones, contexto, aprendizaje y métricas.
   - Funciones para gestionar sesiones, almacenar conversaciones y manejar contexto.
   - Sistema de expiración de contexto con tiempo configurable.
 - **Día 5**: Sistema configuración dinámico
-  - Implementado sistema de configuración con recarga en tiempo real (`core/config_manager.py`).
+  - Implementado sistema de configuración con recarga en tiempo real (`src/lucy/config_manager.py`).
   - Clase `ConfigWatcher` para monitorear cambios en archivos de configuración.
   - Sistema de observadores para notificar cambios a componentes.
   - Detección y registro de cambios específicos en la configuración.

@@ -12,7 +12,7 @@ Se ha implementado una función que determina el saludo adecuado según la hora 
 - **Buenas noches**: 7:00 PM - 4:59 AM
 
 #### Implementación:
-- Se creó la función `get_greeting_by_time()` en el archivo `core/utils.py`
+- Se creó la función `get_greeting_by_time()` en el archivo `src/lucy/utils.py`
 - Se modificó el mensaje de bienvenida en `lucy.py` para utilizar esta función
 - El saludo se adapta automáticamente según la hora del sistema
 

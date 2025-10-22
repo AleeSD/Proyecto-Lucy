@@ -1,7 +1,7 @@
 # Día 04 - Base de Datos para Conversaciones y Contexto
 
 ## Qué se implementó
-- Sistema completo de base de datos SQLite en `core/database.py`.
+- Sistema completo de base de datos SQLite en `src/lucy/database.py`.
 - Clase `ConversationDB` con métodos para gestionar conversaciones y contexto.
 - Tablas: `conversations`, `sessions`, `context`, `learning_data` y `metrics`.
 - Funciones para crear sesiones, almacenar conversaciones y gestionar contexto.
@@ -12,7 +12,7 @@
 ## Cómo usarlo
 - Inicializar: `db = ConversationDB("data/lucy.db")`
 - Crear sesión: `session_id = db.create_session(user_name="Usuario")`
-- Guardar conversación: `db.store_conversation(session_id, "Hola", "¡Hola! ¿En qué puedo ayudarte?")`
+- Guardar conversación: `db.save_conversation(session_id, "Hola", "¡Hola! ¿En qué puedo ayudarte?")`
 - Establecer contexto: `db.set_context(session_id, "última_consulta", "clima", expiry_minutes=30)`
 - Obtener contexto: `última_consulta = db.get_context(session_id, "última_consulta")`
 - Obtener historial: `historial = db.get_conversation_history(session_id, limit=5)`

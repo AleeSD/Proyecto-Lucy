@@ -1,7 +1,7 @@
 # Día 02 - Sistema de Logging y Monitoreo
 
 ## Qué se implementó
-- Gestor central de logging en `core/logging_system.py` (JSON, rotación, colores, Loguru).
+- Gestor central de logging en `src/lucy/logging_system.py` (JSON, rotación, colores, Loguru).
 - Integración en `lucy.py`: uso de `get_logger`, `log_conversation`, `log_performance`, `log_error`.
 - Conversaciones JSON: `logs/conversations/conversations.json`.
 - Métricas de rendimiento: `logs/performance/performance.log`.
@@ -24,6 +24,6 @@
 - Claves útiles: `handlers.console.level`, `handlers.file_handler.maxBytes`, `loggers.core.lucy_ai.level`.
 
 ## Notas técnicas
-- El sistema se inicializa al importar `core.logging_system`.
+- El sistema se inicializa al importar `lucy.logging_system`.
 - Funciones disponibles: `get_logger`, `log_conversation`, `log_performance`, `log_error`.
 - Si falla el logger avanzado, existe fallback al logger básico.
