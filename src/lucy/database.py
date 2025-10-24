@@ -666,7 +666,9 @@ class ConversationDB:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             
-            since = datetime.now() - timedelta(hours=hours)
+            since_dt = datetime.now() - timedelta(hours=hours)
+            # Evitar el adapter por defecto de sqlite3 (Python 3.12 deprecado)
+            since = since_dt.strftime("%Y-%m-%d %H:%M:%S")
             
             # Total de conversaciones
             cursor.execute('''
@@ -717,7 +719,8 @@ class ConversationDB:
         Args:
             days_to_keep: Días de datos a mantener
         """
-        cutoff_date = datetime.now() - timedelta(days=days_to_keep)
+        cutoff_dt = datetime.now() - timedelta(days=days_to_keep)
+        cutoff_str = cutoff_dt.strftime("%Y-%m-%d %H:%M:%S")
         
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -726,7 +729,7 @@ class ConversationDB:
             cursor.execute('''
                 DELETE FROM conversations 
                 WHERE timestamp < ?
-            ''', (cutoff_date,))
+            ''', (cutoff_str,))
             
             conversations_deleted = cursor.rowcount
             
@@ -734,7 +737,7 @@ class ConversationDB:
             cursor.execute('''
                 DELETE FROM metrics 
                 WHERE timestamp < ?
-            ''', (cutoff_date,))
+            ''', (cutoff_str,))
             
             metrics_deleted = cursor.rowcount
             
@@ -742,7 +745,7 @@ class ConversationDB:
             cursor.execute('''
                 DELETE FROM sessions 
                 WHERE last_activity < ?
-            ''', (cutoff_date,))
+            ''', (cutoff_str,))
             
             sessions_deleted = cursor.rowcount
             

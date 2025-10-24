@@ -25,7 +25,7 @@ from typing import Dict, Any, Optional, List
 from enum import Enum
 
 import colorlog
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 from loguru import logger as loguru_logger
 import yaml
 
@@ -77,7 +77,7 @@ class ConversationLogger:
             backupCount=5,
             encoding='utf-8'
         )
-        json_formatter = jsonlogger.JsonFormatter(
+        json_formatter = JsonFormatter(
             '%(timestamp)s %(session_id)s %(user_input)s %(bot_response)s '
             '%(intent)s %(confidence)s %(language)s %(response_time)s',
             timestamp=True
@@ -180,7 +180,7 @@ class PerformanceLogger:
             backupCount=30,
             encoding='utf-8'
         )
-        perf_formatter = jsonlogger.JsonFormatter()
+        perf_formatter = JsonFormatter()
         perf_handler.setFormatter(perf_formatter)
         self.logger.addHandler(perf_handler)
         
@@ -392,7 +392,7 @@ class LoggingManager:
             )
             
             if self.config.get('json_logging', True):
-                file_formatter = jsonlogger.JsonFormatter()
+                file_formatter = JsonFormatter()
             else:
                 file_formatter = logging.Formatter(
                     '%(asctime)s - %(name)s - %(levelname)s - '

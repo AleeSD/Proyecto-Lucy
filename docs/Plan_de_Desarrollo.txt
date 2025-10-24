@@ -111,14 +111,125 @@ Este documento define el objetivo, la arquitectura, las estrategias y las accion
 - Dependencias: Días 1-2.
 
 **Día 6: Testing y Calidad de Código**
-- Objetivo: asegurar estabilidad con pruebas y cobertura.
-- Estrategia: `pytest`, pruebas de integración, cobertura y CI básico.
-- Acciones:
-  - Ampliar `tests/` para `LucyAI`, `Database`, `ConfigManager` y `Training`.
-  - Configurar cobertura y reporte; umbral mínimo 85% (camino a 90%).
-- Entregables: suite de pruebas y pipeline local de CI.
-- Criterios de aceptación: `pytest -q` sin fallos; cobertura >= 85%.
-- Métricas: cobertura; tasa de fallos por commit.
+- Objetivo: asegurar estabilidad con pruebas y cobertura, con arquitectura de pruebas escalable y mantenible.
+- Alcance: pruebas unitarias e integración para `LucyAI`, `ConversationDB`, `ConfigManager`, `LoggingSystem` y `Training`; cobertura y pipeline local de CI.
+
+1) Dependencias técnicas y requisitos por funcionalidad
+- `LucyAI` (src/lucy/lucy_ai.py): depende de `ConfigManager`, `ConversationDB`, `LoggingSystem`, datos `data/intents/*` y modelos en disco. Requisitos: fixtures para datos/modelos, semillas determinísticas, mock de `LoggingSystem` y/o captura con `caplog`.
+- `ConversationDB` (src/lucy/database.py): usa `sqlite3`; requiere DB temporal vía `tmp_path`, uso de timestamps en formato string (`YYYY-MM-DD HH:MM:SS`), atomicidad de transacciones y pruebas de concurrencia ligera.
+- `ConfigManager` (src/lucy/config_manager.py): lee `config/config.json` y watchers; requiere archivo de config de prueba aislado, simulación de cambios en disco y verificación de propagación sin condiciones de carrera.
+- `LoggingSystem` (src/lucy/logging_system.py): formatea JSON con `pythonjsonlogger.json.JsonFormatter`; requiere validación de estructura de log, niveles y ausencia de datos sensibles.
+- `Training` (src/lucy/training.py): depende de `data/intents/*.json`; requiere dataset sintético de prueba, semilla fija, tiempo de ejecución acotado y verificación de guardado/carga de modelo.
+
+2) Arquitectura óptima de pruebas
+- Framework: `pytest` + `pytest-cov` (cobertura). Comando: `pytest -q --cov=src/lucy --cov-report=term-missing`.
+- Estructura de módulos de prueba en `tests/`:
+  - `test_lucy_ai.py`, `test_database.py`, `test_config_manager.py`, `test_logging.py`, `test_training.py`.
+- Fixtures reutilizables en `tests/conftest.py`:
+  - `temp_db_path(tmp_path)` y `conversation_db(temp_db_path)` para DB aislada.
+  - `test_config(tmp_path)` y `config_manager(test_config)` para override de configuración.
+  - `dummy_model_path(tmp_path)` y `lucy_ai(config_manager, conversation_db, dummy_model_path)` para orquestar el motor con dependencias.
+  - `disable_json_logging(monkeypatch)` para forzar formatter simple cuando convenga.
+- Datos de prueba: `src/test_data` y mocks generados en tiempo de test.
+
+3) Módulos y componentes necesarios
+- Pruebas por componente:
+  - LucyAI: intents, lenguaje, respuestas y latencia.
+  - ConversationDB: persistencia, historial, métricas y limpieza.
+  - ConfigManager: carga, reload y propagación de cambios.
+  - LoggingSystem: formato JSON, niveles y trazabilidad.
+  - Training: pipeline completo, guardado y carga del modelo.
+- Utilidades de test: helpers para construir intents válidos y sesiones.
+
+4) Flujos de datos y procesos clave (tests e2e)
+- LucyAI: input → normalización → intención → respuesta → `save_conversation` → log → recuperar historial → aserciones.
+- DB: inserción/consulta → `cleanup_old_data` → `get_metrics_summary` → aserciones de tipos y conteos.
+- Config: escribir nuevo JSON → watcher detecta → componentes ajustan comportamiento → validar latencia de propagación.
+- Logging: emitir registros → capturar con `caplog` → parsear JSON → aserciones de campos.
+- Training: cargar dataset → entrenar → guardar modelo → cargar en `LucyAI` → validar predicciones.
+
+5) Criterios de validación y pruebas unitarias
+- LucyAI: respuesta no vacía, intención válida, idioma detectado, fallback ante intent desconocido, p95 latencia local < 2s.
+- ConversationDB: `save_conversation` persiste; `get_session_history` retorna último N; `get_metrics_summary` entrega dicts con campos esperados; `cleanup_old_data` elimina registros antiguos.
+- ConfigManager: carga por defecto; reload en cambio de archivo; manejo de JSON inválido con log de error; observadores notificados.
+- LoggingSystem: registros en JSON con campos `timestamp`, `session_id`, `intent`, `confidence`; niveles correctos; sin datos sensibles; sin deprecations de import.
+- Training: métricas mínimas calculadas (accuracy/F1 sobre dataset sintético); guardado de mejor modelo; carga desde disco; errores manejados ante dataset vacío o inválido.
+
+6) Acciones detalladas
+- Ampliar `tests/` con casos por componente y parametrizaciones.
+- Añadir `tests/conftest.py` con fixtures descritas y datos sintéticos.
+- Configurar cobertura y reporte; umbral mínimo 85% (camino a 90%).
+- Gating local: script o tarea que ejecute `pytest -q --cov=src/lucy --disable-warnings`.
+
+7) Casos límite y manejo de errores
+- Config ausente o inválido: fallback a valores por defecto y log de error.
+- DB bloqueada o ruta no escribible: reintentos limitados, mensaje de error y abortar operación con estado claro.
+- JSON de intents corrupto: validación previa, excepción controlada y reporte.
+- Entrenamiento sin datos: terminar temprano con mensaje y no generar modelo.
+- Watchers de config: evitar condiciones de carrera con bloqueos ligeros.
+
+8) Documentación técnica
+- Actualizar `docs/` con guía de ejecución de pruebas y cobertura.
+- Comandos recomendados:
+  - `pytest -q`
+  - `pytest -q --cov=src/lucy --cov-report=term-missing`
+  - `pytest -q -k "lucy_ai or database"`
+- Incluir matriz de casos y trazabilidad a objetivos de calidad.
+
+9) Ejemplos de código (referencia)
+```python
+# tests/conftest.py
+import json
+import os
+import pytest
+from src.lucy.database import ConversationDB
+from src.lucy.config_manager import ConfigManager
+from src.lucy.lucy_ai import LucyAI
+
+@pytest.fixture
+def temp_db_path(tmp_path):
+    return tmp_path / "test.db"
+
+@pytest.fixture
+def conversation_db(temp_db_path):
+    db = ConversationDB(str(temp_db_path))
+    yield db
+
+@pytest.fixture
+def test_config(tmp_path):
+    cfg = {"language": "es", "history_limit": 10}
+    p = tmp_path / "config.json"
+    p.write_text(json.dumps(cfg), encoding="utf-8")
+    return str(p)
+
+@pytest.fixture
+def config_manager(test_config):
+    return ConfigManager(config_path=test_config)
+
+@pytest.fixture
+def lucy_ai(config_manager, conversation_db):
+    return LucyAI(config=config_manager, db=conversation_db)
+```
+
+```python
+# tests/test_logging.py
+import json
+import logging
+from src.lucy.logging_system import LoggingSystem
+
+def test_json_logging_structure(caplog):
+    ls = LoggingSystem({"json_logging": True})
+    logger = ls.get_logger("test")
+    with caplog.at_level(logging.INFO):
+        logger.info("hola", extra={"session_id": "s1", "intent": "saludo", "confidence": 0.9})
+    record = caplog.records[-1]
+    payload = json.loads(record.message)
+    assert set(["timestamp","session_id","intent","confidence"]).issubset(payload.keys())
+```
+
+- Entregables: suite de pruebas, cobertura ≥ 85%, pipeline local de CI y documentación actualizada.
+- Criterios de aceptación: `pytest -q` sin fallos; cobertura >= 85%; sin `DeprecationWarning` en rutas críticas.
+- Métricas: cobertura por módulo, tasa de fallos por commit y latencia media en `LucyAI`.
 - Dependencias: Días 1-5.
 
 **Día 7: Documentación y Deployment**
