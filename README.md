@@ -18,7 +18,7 @@ Un asistente de inteligencia artificial conversacional que aprende del usuario, 
 - Windows, Linux o macOS
 - Conexión a internet (para descargar datos de NLTK)
 
-## 🛠️ Instalación
+## 🛠️ Instalación Rápida
 
 ### 1. Clonar el repositorio
 ```bash
@@ -43,9 +43,14 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 4. Optimizar el proyecto (opcional)
+### 4. Preparación automática (opcional)
+Usa los scripts de preparación para automatizar entorno virtual, dependencias y datos NLTK:
 ```bash
-python optimize_project.py
+# Windows (PowerShell)
+scripts\setup_env.ps1
+
+# Linux/Mac
+bash scripts/setup_env.sh
 ```
 
 ## 🎯 Uso
@@ -55,9 +60,9 @@ python optimize_project.py
 python lucy.py
 ```
 
-### Ejecutar Tests
+### Ejecutar Tests y Cobertura
 ```bash
-python lucy.py --test
+pytest -q --cov=src/lucy --cov-report=term-missing
 ```
 
 ### Scripts de Lanzamiento
@@ -71,7 +76,7 @@ run_lucy.bat
 
 ### Prueba Rápida
 ```bash
-python -m pytest -q
+pytest -q
 ```
 
 ## 💬 Comandos Especiales
@@ -136,17 +141,17 @@ El archivo `config/config.json` permite personalizar:
 
 ### Re-entrenar el modelo
 ```bash
-python -m core.training --force
+python -m src.lucy.training --force
 ```
 
 ### Entrenar con parámetros específicos
 ```bash
-python -m core.training --epochs 300 --batch-size 10
+python -m src.lucy.training --epochs 300 --batch-size 10
 ```
 
 ### Validar modelo existente
 ```bash
-python -m core.training --validate
+python -m src.lucy.training --validate
 ```
 
 Optimización (Día 3):
@@ -199,6 +204,16 @@ nltk.download('punkt')
 nltk.download('wordnet')
 nltk.download('omw-1.4')
 ```
+
+### Modelos o intents ausentes
+- Si faltan archivos en `data/models/`, Lucy funciona en modo básico sin ML.
+- Asegúrate de que existan `data/intents/intents_es.json` y `data/intents/intents_en.json`.
+
+## 📚 Documentación ampliada (Día 7)
+- Guía de instalación: `docs/Guia_Instalacion.md`
+- Guía de ejecución: `docs/Guia_Ejecucion.md`
+- Guía de deployment: `docs/Guia_Deployment.md`
+ - Registro del día: `docs/Dia_07_Documentacion_Deployment.md`
 
 ## 📈 Próximas Características
 
