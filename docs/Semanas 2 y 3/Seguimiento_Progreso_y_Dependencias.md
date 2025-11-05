@@ -7,13 +7,15 @@
 
 ## Semana 2 (Días 8–14)
 - Día 8: Sistema de Plugins
-  - Estado: pendiente
+  - Estado: completado
   - Dependencias: Config (Día 5), Logging (Día 2)
   - Riesgos: aislamiento de errores; seguridad
+  - Notas: hooks `on_start/on_message/on_stop`, gestor dinámico, short-circuit en `LucyAI.process_message`, config `plugins.enabled` y `plugins.dirs`, pruebas unitarias de descubrimiento.
 - Día 9: APIs Externas
-  - Estado: pendiente
-  - Dependencias: `services`, credenciales
-  - Riesgos: timeouts, rate limit, manejo de errores
+  - Estado: completado
+  - Dependencias: `ServiceManager`, Config (external_services)
+  - Riesgos: control de errores, extensibilidad
+  - Notas: gestor de servicios con cliente `dummy`, integración de comando `!api` en `LucyAI.process_message`, configuración `external_services.enabled` y `services.dummy`, pruebas unitarias de ejecución.
 - Día 10: PLN Avanzado
   - Estado: pendiente
   - Dependencias: modelos NLP; `LucyAI`

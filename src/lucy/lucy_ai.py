@@ -18,6 +18,8 @@ from typing import Dict, List, Any, Optional, Tuple
 # Importaciones con manejo de TensorFlow
 from .utils import suppress_tf_logs, get_language, measure_execution_time, load_json_file
 from .config_manager import ConfigManager
+from .plugins.manager import PluginManager, PluginResult
+from .services import ServiceManager
 
 # Importar TensorFlow con supresión de logs
 with suppress_tf_logs():
@@ -57,6 +59,19 @@ class LucyAI:
         self._ensure_nltk_data()
         self._load_model_components()
         self._load_intents()
+        
+        # Sistema de plugins (Día 8)
+        try:
+            self.plugin_manager = PluginManager(self.config_manager)
+            self.plugin_manager.start(engine=self)
+        except Exception as e:
+            self.logger.error(f"Error inicializando sistema de plugins: {e}")
+
+        # Servicios externos (Día 9)
+        try:
+            self.service_manager = ServiceManager(self.config_manager)
+        except Exception as e:
+            self.logger.error(f"Error inicializando gestor de servicios: {e}")
         
         self.logger.info("[OK] Lucy AI inicializada correctamente")
     
@@ -224,6 +239,34 @@ class LucyAI:
             
             # Sanitizar entrada
             message = message.strip()[:self.config.get('security', {}).get('max_input_length', 1000)]
+            
+            # Plugins: posibilidad de manejar el mensaje antes del modelo
+            if hasattr(self, 'plugin_manager'):
+                try:
+                    pre_result: PluginResult = self.plugin_manager.handle_message(message, self.conversation_context)
+                    if pre_result and pre_result.handled and pre_result.response:
+                        # Actualizar contexto con respuesta del plugin
+                        self._update_context(message, pre_result.response)
+                        return pre_result.response
+                except Exception as _plug_err:
+                    self.logger.warning(f"[Plugins] Error en pre-procesamiento: {_plug_err}")
+
+            # Comando de servicios externos: '!api <servicio> <operacion> [k=v]...'
+            if isinstance(message, str) and message.strip().lower().startswith("!api ") and hasattr(self, 'service_manager'):
+                parts = message.strip().split()
+                if len(parts) < 3:
+                    return "Uso: !api <servicio> <operación> k=v ..."
+                _, service, operation, *kv = parts
+                params = {}
+                for item in kv:
+                    if "=" in item:
+                        k, v = item.split("=", 1)
+                        params[k] = v
+                result = self.service_manager.execute(service, operation, params)
+                if result is None:
+                    return f"Servicio '{service}' u operación '{operation}' no disponible"
+                self._update_context(message, str(result))
+                return str(result)
             
             # Detectar idioma
             self.current_language = get_language(message)

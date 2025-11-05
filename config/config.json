@@ -1,4 +1,4 @@
-    {
+{
     "app": {
         "name": "Lucy AI",
         "version": "1.0.0",
@@ -79,5 +79,19 @@
         "validation_split": 0.2,
         "save_checkpoints": true,
         "checkpoint_interval": 50
+    },
+    "external_services": {
+        "enabled": true,
+        "services": {
+            "dummy": {
+                "prefix": ""
+            }
+        }
+    },
+    "plugins": {
+        "enabled": true,
+        "dirs": [
+            "src/lucy/plugins/builtins"
+        ]
     }
-    }
+}
