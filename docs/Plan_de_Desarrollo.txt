@@ -250,39 +250,139 @@ def test_json_logging_structure(caplog):
 Para cada día se aplicará el mismo esquema (Objetivo, Estrategia, Acciones, Entregables, Criterios, Métricas, Dependencias). A continuación, se detallan los puntos críticos de implementación.
 
 **Día 8: Sistema de Plugins**
-- Estrategia: cargador dinámico con registro y contratos claros (interfaces).
-- Acciones: módulo `plugins/` con descubrimiento y sandbox básico; ejemplo funcional.
+- Objetivo: extensibilidad modular sin comprometer estabilidad ni seguridad.
+- Integración: `LucyAI` orquesta `PluginManager` con hooks (`on_start`, `on_message`, `on_stop`); trazabilidad en `LoggingSystem` por plugin.
+- Estrategia: cargador dinámico con registro y contratos claros (`Plugin`), aislamiento de excepciones y modo seguro.
+- Acciones:
+  - Crear `src/lucy/plugins/base.py` (interfaz y contrato), `src/lucy/plugins/manager.py` (descubrimiento, carga/descarga).
+  - Añadir `src/lucy/plugins/examples/*.py` para validación y guía.
+  - Integrar en `LucyAI` la fase de hooks y propagación de eventos.
+- Configuración: `config/config.json` → `plugins.enabled`, `plugins.paths`, `plugins.safe_mode`.
+- Requisitos: Python 3.10+; compatibilidad Windows/macOS/Linux; logs JSON por plugin.
+- Criterios de aceptación: carga/descarga segura; fallos de un plugin no afectan el core; logs completos.
+- Pruebas: unitarias del manager (descubrimiento, contratos, errores) e integración con `LucyAI`.
 - Dependencias: Config estable (Día 5) y Logging (Día 2).
 
 **Día 9: Integración con APIs Externas**
-- Estrategia: clientes HTTP con autenticación, rate limiting y cache.
-- Acciones: capa `services/` y pruebas contra sandbox/mock.
+- Objetivo: consumir servicios externos de forma segura y resiliente.
+- Integración: `LucyAI` invoca clientes de `src/lucy/services` mediante interfaces; métricas en `LoggingSystem`.
+- Estrategia: clientes HTTP con autenticación, timeouts, reintentos exponenciales y cache local.
+- Acciones:
+  - Crear `src/lucy/services/client_base.py` y clientes específicos (`client_{service}.py`).
+  - Añadir manejo de credenciales (env/archivo seguro) y rate limiting por servicio.
+  - Mocks y sandbox para pruebas (respuestas controladas).
+- Configuración: `apis.{service}.base_url`, `auth`, `timeout`, `retry.max_attempts`, `cache.ttl`.
+- Requisitos: `httpx>=0.27`, `tenacity>=8.2`, `pydantic>=2.6`.
+- Criterios de aceptación: timeouts y reintentos efectivos; errores manejados; métricas de éxito/fracaso.
+- Pruebas: integración con mock/sandbox, latencia y correctitud de parseo.
 
 **Día 10: PLN Avanzado**
-- Estrategia: pipeline con spaCy/Transformers; normalización y scoring.
-- Acciones: nuevas funciones en `lucy_ai.py` y modelos en `src/test_models/`.
+- Objetivo: mejorar intención, entidades y sentimientos con pipeline opcional.
+- Integración: `LucyAI` consulta `src/lucy/nlp/pipeline.py` si `nlp.enabled=true`; fallback a reglas base si falla.
+- Estrategia: pipeline con `spaCy/Transformers`; normalización, tokenización y scoring configurable.
+- Acciones:
+  - Crear `src/lucy/nlp/{__init__.py,pipeline.py}` con interfaces y modelos configurables.
+  - Añadir modelos de prueba en `src/test_models/` y utilidades de normalización.
+- Configuración: `nlp.enabled`, `nlp.model`, `nlp.thresholds` (intención/entidades/sentimiento).
+- Requisitos: `spacy>=3.7`, `transformers>=4.44`, `sentence-transformers>=2.2` (opcionales).
+- Criterios de aceptación: mejora de métricas vs baseline y fallback transparente.
+- Pruebas: unitarias de pipeline, rendimiento básico y compatibilidad con `LucyAI`.
 
 **Día 11: Memoria a Largo Plazo**
-- Estrategia: almacenamiento vectorial y búsqueda semántica.
-- Acciones: módulo `memory/` y conexión con `ConversationDB`.
+- Objetivo: enriquecer contexto con recuperación semántica de información pasada.
+- Integración: `src/lucy/memory/store.py` conectado a `ConversationDB`; API `search_semantic(query)` usada por `LucyAI`.
+- Estrategia: embeddings + vector store local; índices y mantenimiento.
+- Acciones: crear `src/lucy/memory/{store.py,embeddings.py}` y jobs de indexado.
+- Configuración: `memory.enabled`, `memory.backend`, `memory.dimensions`, `memory.ttl`.
+- Requisitos: `sentence-transformers` opcional; almacenamiento local (SQLite/FAISS ligero).
+- Criterios de aceptación: inserción/consulta deterministas; latencia < 200 ms; coherencia del resultado.
+- Pruebas: unitarias y e2e con `LucyAI` y datos sintéticos.
 
 **Día 12: Interface Web Básica**
-- Estrategia: API REST (FastAPI) y frontend mínimo.
-- Acciones: endpoints para chat/contexto; WebSocket para tiempo real.
+- Objetivo: exponer Lucy por API y canal web simple.
+- Integración: `src/lucy/web/app.py` (FastAPI) orquesta `LucyAI`, `ConversationDB`, `ConfigManager` y `LoggingSystem`.
+- Estrategia: endpoints REST `/chat`, `/context`; WebSocket para tiempo real; CORS controlado.
+- Acciones: construir app, dependencias, routers y middleware; cliente simple opcional.
+- Configuración: `web.enabled`, `web.host`, `web.port`, `web.cors`.
+- Requisitos: `fastapi>=0.115`, `uvicorn[standard]>=0.30`, `pydantic>=2.6`, `websockets`.
+- Criterios de aceptación: endpoints funcionales, integración correcta y latencia estable.
+- Pruebas: integración con test client y simulaciones de flujo.
 
 **Día 13: Comandos de Sistema**
-- Estrategia: capa segura con whitelist y auditoría.
-- Acciones: integración con `LoggingSystem` y prompts claros.
+- Objetivo: ejecutar acciones locales seguras y trazables.
+- Integración: `src/lucy/system/runner.py` con whitelist, auditoría y configuración dinámica.
+- Estrategia: validar comandos, sandbox cuando aplique, logs ricos.
+- Acciones: implementar runner, lista permitida y prompts claros; manejo de errores.
+- Configuración: `system_commands.enabled`, `system_commands.allowed_commands`.
+- Criterios de aceptación: sin escalación de privilegios; auditoría completa.
+- Pruebas: unitarias con sandbox y simulación de condiciones de error.
 
 **Día 14: Notificaciones**
-- Estrategia: programador de tareas y conectores de calendario.
-- Acciones: colas ligeras y persistencia de recordatorios.
+- Objetivo: recordatorios y avisos programables con persistencia ligera.
+- Integración: `src/lucy/notifications/scheduler.py` conectado a `ConversationDB` y `LoggingSystem`.
+- Estrategia: scheduler simple, colas ligeras y conectores (calendario/email opcional).
+- Acciones: programar, cancelar y disparar notificaciones; persistencia básica.
+- Configuración: `notifications.enabled`, `notifications.channels`, `notifications.schedule`.
+- Criterios de aceptación: programación y disparo deterministas; logs visibles.
+- Pruebas: unitarias de programación, cancelación y entrega simulada.
 
 ---
 
 ### Fase 3: Inteligencia Avanzada (Días 15-21)
 - Enfoque incremental con validaciones fuertes; cada subcomponente integra logging y pruebas.
 - Prioridades: datos (Día 15), generación (Día 16), voz (Día 17), visión (Día 18), cloud (Día 19), recomendaciones (Día 20), automatización (Día 21).
+
+**Día 15: Análisis de Datos y Reportes**
+- Objetivo: generar insights a partir de conversaciones y métricas.
+- Integración: `src/lucy/analytics` consume `ConversationDB` y logs; exporta CSV/JSON.
+- Acciones: agregados por intención/idioma, filtros por rango; reporte de latencias.
+- Configuración: `analytics.enabled`, `analytics.outputs`.
+- Criterios: export determinista y consistencia de agregados.
+- Pruebas: unitarias sobre agregados y formatos; integración con datos de prueba.
+
+**Día 16: Generación de Contenido**
+- Objetivo: producir texto funcional con plantillas y ML opcional.
+- Integración: `src/lucy/generation` llamado por `LucyAI` bajo intención específica.
+- Acciones: plantillas parametrizadas, control de longitud y coherencia.
+- Configuración: `generation.enabled`, `generation.templates`.
+- Criterios: coherencia mínima; golden tests para estabilidad.
+- Pruebas: unitarias y validación de calidad.
+
+**Día 17: Reconocimiento de Voz**
+- Objetivo: transcribir audio a texto localmente.
+- Integración: `src/lucy/voice` y conexión con web; usa `ConfigManager`.
+- Acciones: captura, transcripción y manejo de errores.
+- Requisitos: `SpeechRecognition`/`Vosk`.
+- Criterios: precisión mínima y estabilidad; latencia aceptable.
+- Pruebas: unitarias con muestras pregrabadas.
+
+**Día 18: Visión por Computadora**
+- Objetivo: tareas básicas de imagen (detección simple, OCR opcional).
+- Integración: `src/lucy/vision` con utilidades; resultados consumidos por `LucyAI`.
+- Requisitos: `opencv-python` o `pillow`.
+- Criterios: funcionalidad mínima estable.
+- Pruebas: unitarias sobre imágenes de ejemplo.
+
+**Día 19: Servicios Cloud**
+- Objetivo: integrar servicios externos cloud de forma segura (opcional).
+- Integración: `src/lucy/cloud` con adaptadores; credenciales seguras.
+- Acciones: operaciones básicas (almacenamiento/servicios ML).
+- Criterios: seguridad y configuración externa; sin datos sensibles en logs.
+- Pruebas: mocks y validación de rutas críticas.
+
+**Día 20: Recomendaciones**
+- Objetivo: sugerencias basadas en historial y preferencias.
+- Integración: `src/lucy/recommender` usando `ConversationDB` y/o `memory`.
+- Acciones: heurísticas y ML ligero; métricas offline.
+- Criterios: relevancia y estabilidad.
+- Pruebas: unitarias y evaluación offline.
+
+**Día 21: Automatización Avanzada (Workflows)**
+- Objetivo: orquestar tareas multi-paso con idempotencia.
+- Integración: `src/lucy/workflows` invocado por `LucyAI` según intención.
+- Acciones: DSL simple y ejecución controlada; trazabilidad completa.
+- Criterios: idempotencia y logs; recuperación de fallos.
+- Pruebas: unitarias y e2e de flujos.
 
 ---
 
