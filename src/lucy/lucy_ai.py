@@ -279,15 +279,36 @@ class LucyAI:
             if isinstance(message, str) and message.strip().lower().startswith("!nlp ") and hasattr(self, 'nlp_manager'):
                 parts = message.strip().split()
                 if len(parts) < 2:
-                    return "Uso: !nlp analyze text=..."
-                _, *kv = parts
+                    return "Uso: !nlp <analyze|sent_doc|sent_sent|ner|relate|gen|translate> text=... [to=lang]"
+                _, command, *kv = parts if len(parts) >= 2 else (None, None)
                 params = {}
                 for item in kv:
                     if "=" in item:
                         k, v = item.split("=", 1)
                         params[k] = v
                 text = params.get("text", "")
-                result = self.nlp_manager.analyze(text)
+                result = None
+                try:
+                    if command == "analyze":
+                        result = self.nlp_manager.analyze(text)
+                    elif command == "sent_doc":
+                        result = self.nlp_manager.analyze_sentiment_doc(text)
+                    elif command == "sent_sent":
+                        result = self.nlp_manager.analyze_sentiment_sentence(text)
+                    elif command == "ner":
+                        result = self.nlp_manager.named_entity_recognition(text)
+                    elif command == "relate":
+                        result = self.nlp_manager.relation_extraction(text)
+                    elif command == "gen":
+                        max_tokens = int(params.get("max", "50"))
+                        result = self.nlp_manager.generate(text or params.get("prompt", ""), max_new_tokens=max_tokens)
+                    elif command == "translate":
+                        target = params.get("to", "en")
+                        result = self.nlp_manager.translate(text, target_lang=target)
+                    else:
+                        return "Comando !nlp desconocido"
+                except Exception as e:
+                    return f"Error en !nlp {command}: {e}"
                 try:
                     return json.dumps(result, ensure_ascii=False)
                 except Exception:

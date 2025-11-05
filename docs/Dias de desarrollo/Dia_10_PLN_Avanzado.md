@@ -8,11 +8,13 @@ Este día añade un gestor ligero de PLN avanzado para enriquecer el procesamien
 - Enriquecer el contexto conversacional con resultados de análisis.
 - Actualizar configuración con `advanced_nlp`.
 - Crear pruebas unitarias.
+- Extender capacidades avanzadas: generación, traducción, NER, relaciones, sentimiento doc/frase, con opción de usar Transformers si están disponibles.
 
 ## Arquitectura
-- `src/lucy/nlp/manager.py`: gestor central de PLN, sin dependencias externas pesadas.
+- `src/lucy/nlp/manager.py`: gestor central de PLN, con pipelines opcionales.
 - `src/lucy/nlp/__init__.py`: exporta `AdvancedNLPManager`.
 - `src/lucy/lucy_ai.py`: inicializa el gestor y maneja `!nlp`.
+- `src/lucy/nlp/pipelines/`: módulo con implementaciones de `sentiment`, `generation`, `translation`, `ner`, `relation_extraction` y `transformer_wrapper` para uso opcional de Hugging Face.
 
 ## Configuración
 Se añadió la sección `advanced_nlp` en `config/config.json`:
@@ -20,12 +22,14 @@ Se añadió la sección `advanced_nlp` en `config/config.json`:
 ```json
 "advanced_nlp": {
   "enabled": true,
+  "transformers_enabled": false,
+  "models": { "sentiment": null, "generation": null, "translation": null, "ner": null },
   "keywords": {"top_n": 5}
 }
 ```
 
 ## Comando en LucyAI
-Formato: `!nlp analyze text=...`
+Formato: `!nlp <analyze|sent_doc|sent_sent|ner|relate|gen|translate> text=... [to=lang]`
 
 Ejemplo: `!nlp analyze text=Me siento feliz hoy`
 
@@ -35,7 +39,7 @@ El resultado se devuelve en JSON y puede incluir:
 - `keywords`: lista de términos frecuentes sin stopwords
 
 ## Pruebas
-- `tests/test_nlp.py` valida sentimiento (positivo/negativo) y entidades.
+- `tests/test_nlp.py` valida sentimiento (positivo/negativo), entidades y cae en fallbacks sin dependencias externas.
 
 ## Criterios de Aceptación
 - AdvancedNLPManager instanciado cuando `advanced_nlp.enabled=true`.

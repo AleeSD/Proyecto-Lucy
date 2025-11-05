@@ -32,3 +32,21 @@ def test_nlp_entities(tmp_path):
     assert "test@example.com" in res["entities"]["emails"]
     assert "2025-11-05" in res["entities"]["dates"]
     assert any(n in res["entities"]["numbers"] for n in ["123.5", "123"])
+
+
+def test_nlp_generation_fallback(tmp_path):
+    cm = ConfigManager(str(tmp_path / "cfg.json"), auto_reload=False)
+    cm.save(str(tmp_path / "cfg.json"))
+    cm.set("advanced_nlp", {"enabled": True})
+    nlp = AdvancedNLPManager(cm)
+    out = nlp.generate("Probando generación")
+    assert isinstance(out, str) and len(out) > 0
+
+
+def test_nlp_translation_basic(tmp_path):
+    cm = ConfigManager(str(tmp_path / "cfg.json"), auto_reload=False)
+    cm.save(str(tmp_path / "cfg.json"))
+    cm.set("advanced_nlp", {"enabled": True})
+    nlp = AdvancedNLPManager(cm)
+    out = nlp.translate("hola mundo", target_lang="en")
+    assert "hello" in out or out != "hola mundo"

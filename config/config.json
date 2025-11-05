@@ -90,6 +90,13 @@
     },
     "advanced_nlp": {
         "enabled": true,
+        "transformers_enabled": false,
+        "models": {
+            "sentiment": null,
+            "generation": null,
+            "translation": null,
+            "ner": null
+        },
         "keywords": {"top_n": 5}
     },
     "plugins": {
