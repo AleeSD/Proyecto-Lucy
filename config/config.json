@@ -88,6 +88,10 @@
             }
         }
     },
+    "advanced_nlp": {
+        "enabled": true,
+        "keywords": {"top_n": 5}
+    },
     "plugins": {
         "enabled": true,
         "dirs": [

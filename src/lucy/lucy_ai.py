@@ -20,6 +20,7 @@ from .utils import suppress_tf_logs, get_language, measure_execution_time, load_
 from .config_manager import ConfigManager
 from .plugins.manager import PluginManager, PluginResult
 from .services import ServiceManager
+from .nlp import AdvancedNLPManager
 
 # Importar TensorFlow con supresión de logs
 with suppress_tf_logs():
@@ -72,6 +73,12 @@ class LucyAI:
             self.service_manager = ServiceManager(self.config_manager)
         except Exception as e:
             self.logger.error(f"Error inicializando gestor de servicios: {e}")
+
+        # PLN avanzado (Día 10)
+        try:
+            self.nlp_manager = AdvancedNLPManager(self.config_manager)
+        except Exception as e:
+            self.logger.error(f"Error inicializando gestor de PLN avanzado: {e}")
         
         self.logger.info("[OK] Lucy AI inicializada correctamente")
     
@@ -267,6 +274,24 @@ class LucyAI:
                     return f"Servicio '{service}' u operación '{operation}' no disponible"
                 self._update_context(message, str(result))
                 return str(result)
+
+            # Comando de PLN avanzado: '!nlp analyze text=...'
+            if isinstance(message, str) and message.strip().lower().startswith("!nlp ") and hasattr(self, 'nlp_manager'):
+                parts = message.strip().split()
+                if len(parts) < 2:
+                    return "Uso: !nlp analyze text=..."
+                _, *kv = parts
+                params = {}
+                for item in kv:
+                    if "=" in item:
+                        k, v = item.split("=", 1)
+                        params[k] = v
+                text = params.get("text", "")
+                result = self.nlp_manager.analyze(text)
+                try:
+                    return json.dumps(result, ensure_ascii=False)
+                except Exception:
+                    return str(result)
             
             # Detectar idioma
             self.current_language = get_language(message)

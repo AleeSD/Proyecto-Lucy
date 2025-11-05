@@ -17,9 +17,10 @@
   - Riesgos: control de errores, extensibilidad
   - Notas: gestor de servicios con cliente `dummy`, integración de comando `!api` en `LucyAI.process_message`, configuración `external_services.enabled` y `services.dummy`, pruebas unitarias de ejecución.
 - Día 10: PLN Avanzado
-  - Estado: pendiente
-  - Dependencias: modelos NLP; `LucyAI`
-  - Riesgos: performance, compatibilidad
+  - Estado: completado
+  - Dependencias: `AdvancedNLPManager`, Config (advanced_nlp), `LucyAI`
+  - Riesgos: precisión simple de lexicón; extensibilidad futura
+  - Notas: gestor de PLN con sentimiento, entidades y keywords; comando `!nlp analyze` integrado en `LucyAI.process_message`; configuración `advanced_nlp.enabled` y `keywords.top_n`; pruebas unitarias de sentimiento y entidades.
 - Día 11: Memoria a Largo Plazo
   - Estado: pendiente
   - Dependencias: `ConversationDB`, embeddings
