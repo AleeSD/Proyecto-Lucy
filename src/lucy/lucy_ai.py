@@ -21,6 +21,7 @@ from .config_manager import ConfigManager
 from .plugins.manager import PluginManager, PluginResult
 from .services import ServiceManager
 from .nlp import AdvancedNLPManager
+from .memory import MemoryManager
 
 # Importar TensorFlow con supresión de logs
 with suppress_tf_logs():
@@ -79,6 +80,12 @@ class LucyAI:
             self.nlp_manager = AdvancedNLPManager(self.config_manager)
         except Exception as e:
             self.logger.error(f"Error inicializando gestor de PLN avanzado: {e}")
+        
+        # Memoria a Largo Plazo (Día 11)
+        try:
+            self.memory_manager = MemoryManager(self.config_manager)
+        except Exception as e:
+            self.logger.error(f"Error inicializando gestor de Memoria: {e}")
         
         self.logger.info("[OK] Lucy AI inicializada correctamente")
     
@@ -274,6 +281,44 @@ class LucyAI:
                     return f"Servicio '{service}' u operación '{operation}' no disponible"
                 self._update_context(message, str(result))
                 return str(result)
+
+            # Comando de memoria: '!mem <add|find|purge|status> ...'
+            if isinstance(message, str) and message.strip().lower().startswith("!mem ") and hasattr(self, 'memory_manager'):
+                parts = message.strip().split()
+                if len(parts) < 2:
+                    return "Uso: !mem <add|find|purge|status> k=v ..."
+                _, command, *kv = parts if len(parts) >= 2 else (None, None)
+                params = {}
+                for item in kv:
+                    if "=" in item:
+                        k, v = item.split("=", 1)
+                        params[k] = v
+                try:
+                    if command == "add":
+                        text = params.get("text", "")
+                        conv_id = params.get("conv_id", "")
+                        user_id = params.get("user_id", "")
+                        event_id = self.memory_manager.add_event(conv_id, user_id, text, metadatos={"tags": params.get("tags", "")})
+                        return json.dumps({"event_id": event_id}, ensure_ascii=False)
+                    elif command == "find":
+                        query = params.get("query", "")
+                        top_k = int(params.get("top_k", str(self.config.get('memory', {}).get('top_k', 5))))
+                        filtros = {}
+                        if "conv_id" in params:
+                            filtros["conv_id"] = params["conv_id"]
+                        results = self.memory_manager.find_similar(query, top_k=top_k, filtros=filtros)
+                        return json.dumps(results, ensure_ascii=False)
+                    elif command == "purge":
+                        conv_id = params.get("conv_id", "")
+                        purged = self.memory_manager.purge_conversation(conv_id)
+                        return json.dumps({"purged": purged}, ensure_ascii=False)
+                    elif command == "status":
+                        stat = self.memory_manager.status()
+                        return json.dumps(stat, ensure_ascii=False)
+                    else:
+                        return "Comando !mem desconocido"
+                except Exception as e:
+                    return f"Error en !mem {command}: {e}"
 
             # Comando de PLN avanzado: '!nlp analyze text=...'
             if isinstance(message, str) and message.strip().lower().startswith("!nlp ") and hasattr(self, 'nlp_manager'):

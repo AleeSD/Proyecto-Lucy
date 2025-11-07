@@ -72,3 +72,4 @@
 - Registrar avances por día y actualizar métricas clave.
 - Vincular PRs y commits relevantes a cada ítem.
 - Ajustar dependencias y riesgos conforme cambie el alcance.
+ - Para Memoria (Día 11), seguir métricas: latencia p95, recall@k, tasa de inserción/purga; documentar y versionar configuración `memory.*` y enlazar decisiones de diseño (ADR) y PRs relacionados.
