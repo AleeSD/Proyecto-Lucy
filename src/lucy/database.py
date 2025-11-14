@@ -115,6 +115,20 @@ class ConversationDB:
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_sessions_activity ON sessions(last_activity)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_context_session ON context(session_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_context_expiry ON context(expires_at)')
+
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL UNIQUE,
+                    email TEXT NOT NULL UNIQUE,
+                    first_name TEXT NOT NULL,
+                    last_name TEXT NOT NULL,
+                    dob TEXT NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    password_salt TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
             
             conn.commit()
             
@@ -161,6 +175,44 @@ class ConversationDB:
             
         self.logger.info(f"Nueva sesión creada: {session_id}")
         return session_id
+
+    def _hash_password(self, password: str, salt: bytes) -> str:
+        import hashlib
+        return hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100_000).hex()
+
+    def create_user(self, username: str, email: str, first_name: str, last_name: str, dob: str, password: str) -> bool:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT 1 FROM users WHERE username = ? OR email = ?', (username, email))
+            existing = cursor.fetchone()
+            if existing:
+                return False
+            salt = os.urandom(16)
+            pwd_hash = self._hash_password(password, salt)
+            cursor.execute('''
+                INSERT INTO users (username, email, first_name, last_name, dob, password_hash, password_salt)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (username, email, first_name, last_name, dob, pwd_hash, salt.hex()))
+            conn.commit()
+            return True
+
+    def get_user_by_identifier(self, identifier: str) -> Optional[Dict[str, Any]]:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM users WHERE username = ? OR email = ?', (identifier, identifier))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+    def verify_login(self, identifier: str, password: str) -> Tuple[bool, Optional[Dict[str, Any]]]:
+        user = self.get_user_by_identifier(identifier)
+        if not user:
+            return False, None
+        import hmac
+        salt = bytes.fromhex(user['password_salt'])
+        candidate = self._hash_password(password, salt)
+        if hmac.compare_digest(candidate, user['password_hash']):
+            return True, user
+        return False, None
         
     def store_conversation(self, session_id: str, user_input: str, bot_response: str,
                         language: str, confidence: float = None, intent: str = None,

@@ -90,8 +90,9 @@ class ConfigManager:
         self._lock = threading.RLock()
         
         # Rutas base
-        self.base_dir = Path(__file__).parent.parent
-        self.config_dir = self.base_dir / "config"
+        self.base_dir = Path(__file__).parent.parent  # normalmente 'src'
+        self.project_root = self.base_dir.parent      # raíz del repositorio
+        self.config_dir = self.project_root / "config"
         
         # Configuración por defecto
         self._default_config = self._get_default_config()
@@ -326,8 +327,9 @@ class ConfigManager:
         if not relative_path:
             raise ValueError(f"Ruta '{path_key}' no configurada")
             
+        # Resolver siempre respecto a la raíz del proyecto
         # Normalizar separadores a formato POSIX para compatibilidad en tests
-        return str((self.base_dir / relative_path).as_posix())
+        return str((self.project_root / relative_path).as_posix())
     
     def save(self, path: Optional[str] = None):
         """

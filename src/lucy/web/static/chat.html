@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lucy AI — Chat</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="branding">
+        <img class="ai-avatar" src="/assets/img/marquee-agentforce-ai-chatbot.jpg" alt="Avatar de Lucy" loading="lazy" width="36" height="36" />
+        <span class="logo" aria-hidden="true">🤖</span>
+        <div>
+          <h1>Lucy AI</h1>
+          <p class="subtitle">Chat autenticado</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="logout" class="btn secondary">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="chat-panel">
+        <div id="messages" class="messages"></div>
+        <form id="chat-form" class="composer">
+          <input id="message-input" type="text" placeholder="Escribe tu mensaje..." autocomplete="off" />
+          <button type="submit" class="btn primary" id="btn-send">Enviar</button>
+        </form>
+      </section>
+      <aside id="stats" class="stats-panel hidden">
+        <h2>Estado</h2>
+        <pre id="stats-content"></pre>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <span>v1.0.0</span>
+      <span id="session-id"></span>
+    </footer>
+
+    <script src="/assets/chat.js" type="module"></script>
+  </body>
+  </html>

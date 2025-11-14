@@ -36,19 +36,27 @@ if sys.platform == "win32":
     except:
         pass
 
-# Agregar el directorio actual al path para imports
-sys.path.insert(0, str(Path(__file__).parent))
+"""
+Ajuste de imports: usar paquete 'lucy' (en ./src) directamente,
+mantenemos compatibilidad con 'core' como shim.
+"""
+# Agregar el directorio actual y ./src al path para imports
+base_dir = Path(__file__).parent
+src_dir = base_dir / "src"
+sys.path.insert(0, str(base_dir))
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
 
 # Configurar entorno antes de importar TensorFlow
-from core.utils import suppress_tf_logs
+from lucy.utils import suppress_tf_logs
 
 # Suprimir logs de TensorFlow desde el inicio
 with suppress_tf_logs():
-    from core import LucyAI, ConfigManager, get_config_manager
-    from core.database import ConversationDB
-    from core.utils import create_session_id, performance_monitor, log_error_with_context
+    from lucy import LucyAI, ConfigManager, get_config_manager
+    from lucy.database import ConversationDB
+    from lucy.utils import create_session_id, performance_monitor, log_error_with_context
     # Integración del sistema de logging y monitoreo (Día 02)
-    from core.logging_system import (
+    from lucy.logging_system import (
         get_logger,
         log_conversation,
         log_performance,
@@ -146,7 +154,7 @@ class LucyApplication:
             print("="*60)
             
             # Obtener saludo según la hora del día
-            from core.utils import get_greeting_by_time
+            from lucy.utils import get_greeting_by_time
             greeting = get_greeting_by_time()
             
             print(f"{greeting}! Soy Lucy, tu asistente de IA.")
@@ -529,8 +537,14 @@ python lucy.py --train           # Re-entrenar modelo
             app.run_training()
         
         elif args.api:
-            print("[GLOBE] Modo API no implementado aún")
-            print("   Será implementado en fases futuras del desarrollo")
+            from lucy.web import create_app
+            api_cfg = app.config.get('api', {})
+            host = api_cfg.get('host', '127.0.0.1')
+            port = int(api_cfg.get('port', 8000))
+            debug = bool(api_cfg.get('debug', False))
+            print(f"[GLOBE] Iniciando servidor web en http://{host}:{port}/")
+            import uvicorn
+            uvicorn.run(create_app(), host=host, port=port, reload=debug)
         
         else:
             # Modo chat interactivo por defecto

@@ -60,6 +60,20 @@ bash scripts/setup_env.sh
 python lucy.py
 ```
 
+### Modo Web/API
+```bash
+python lucy.py --api
+# Windows
+run_lucy.bat --api
+# Linux/Mac
+./run_lucy.sh --api
+# Alternativa (solo servidor)
+uvicorn src.lucy.web.app:create_app --factory --host 127.0.0.1 --port 8000
+```
+- Rutas: `/` (registro + información I.A), `/login` (inicio de sesión), `/chat` (chat protegido)
+- Seguridad: CSRF (`/api/csrf`) y cookie `session_token` HttpOnly
+- Endpoints clave: `POST /api/register`, `POST /api/login`, `POST /api/logout`, `POST /api/chat`
+
 ### Ejecutar Tests y Cobertura
 ```bash
 pytest -q --cov=src/lucy --cov-report=term-missing
@@ -209,21 +223,26 @@ nltk.download('omw-1.4')
 - Si faltan archivos en `data/models/`, Lucy funciona en modo básico sin ML.
 - Asegúrate de que existan `data/intents/intents_es.json` y `data/intents/intents_en.json`.
 
-## 📚 Documentación ampliada (Día 7)
+## 📚 Documentación ampliada
 - Guía de instalación: `docs/Guia_Instalacion.md`
 - Guía de ejecución: `docs/Guia_Ejecucion.md`
 - Guía de deployment: `docs/Guia_Deployment.md`
- - Registro del día: `docs/Dia_07_Documentacion_Deployment.md`
+- Información técnica de la I.A: `docs/IA_Informacion_Extendida.md`
+- Checklist de pruebas web: `docs/Checklist_Pruebas_Web.md`
+
+## 📈 Novedades Web y API
+
+- [x] Interfaz web con vistas separadas: registro (`/`), login (`/login`) y chat (`/chat`)
+- [x] Autenticación con cookie `HttpOnly` y protección CSRF
+- [x] Validaciones en tiempo real y mensajes de error claros
+- [x] Diseño responsive, fondo unificado y avatar coherente
 
 ## 📈 Próximas Características
 
-- [ ] API REST para integración web
-- [ ] Interfaz gráfica (GUI)
-- [ ] Reconocimiento de voz
-- [ ] Síntesis de voz
-- [ ] Integración con servicios externos
-- [ ] Plugins personalizables
-- [ ] Análisis de sentimientos
+- [ ] Recuperación de contraseña vía email con tokens de un solo uso
+- [ ] Voz y visión (captura de audio/video y síntesis)
+- [ ] Métricas avanzadas y panel de administración
+- [ ] Más plugins y servicios externos
 - [ ] Aprendizaje continuo
 
 ## 🤝 Contribuir

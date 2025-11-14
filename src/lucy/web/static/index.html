@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lucy AI — Interfaz Web</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="branding">
+        <span class="logo">🤖</span>
+        <div>
+          <h1>Lucy AI</h1>
+          <p class="subtitle">Asistente conversacional</p>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="toggle-stats" class="btn secondary">Estadísticas</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="auth-panels">
+        <div class="card">
+          <div class="card-header">
+            <h2>Registro</h2>
+          </div>
+          <form id="register-form" class="form-grid">
+            <div class="field">
+              <label>Nombre de usuario</label>
+              <input id="reg-username" type="text" placeholder="mínimo 6, solo letras y números" />
+              <div class="error" id="err-username"></div>
+            </div>
+            <div class="field">
+              <label>Correo electrónico</label>
+              <input id="reg-email" type="email" placeholder="tucorreo@dominio.com" />
+              <div class="error" id="err-email"></div>
+            </div>
+            <div class="field">
+              <label>Nombres completos</label>
+              <input id="reg-first" type="text" />
+              <div class="error" id="err-first"></div>
+            </div>
+            <div class="field">
+              <label>Apellidos completos</label>
+              <input id="reg-last" type="text" />
+              <div class="error" id="err-last"></div>
+            </div>
+            <div class="field">
+              <label>Fecha de nacimiento</label>
+              <input id="reg-dob" type="date" />
+              <div class="error" id="err-dob"></div>
+            </div>
+            <div class="field">
+              <label>Contraseña</label>
+              <input id="reg-password" type="password" placeholder="mínimo 8, incluye mayúscula, minúscula y dígito" />
+              <div class="error" id="err-password"></div>
+            </div>
+            <div class="actions-row">
+              <button type="submit" class="btn primary">Registrarse</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Inicio de sesión</h2>
+          </div>
+          <form id="login-form" class="form-grid">
+            <div class="field">
+              <label>Email o usuario</label>
+              <input id="login-id" type="text" />
+              <div class="error" id="err-login-id"></div>
+            </div>
+            <div class="field">
+              <label>Contraseña</label>
+              <input id="login-password" type="password" />
+              <div class="error" id="err-login-password"></div>
+            </div>
+            <div class="actions-row">
+              <button type="submit" class="btn primary">Iniciar sesión</button>
+              <a id="forgot" href="#" class="link">¿Olvidaste tu contraseña?</a>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="chat-panel">
+        <div id="messages" class="messages"></div>
+        <form id="chat-form" class="composer">
+          <input id="message-input" type="text" placeholder="Escribe tu mensaje..." autocomplete="off" />
+          <button type="submit" class="btn primary">Enviar</button>
+        </form>
+      </section>
+      <aside id="stats" class="stats-panel hidden">
+        <h2>Estado</h2>
+        <pre id="stats-content"></pre>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <span>v1.0.0</span>
+      <span id="session-id"></span>
+    </footer>
+
+    <script src="/assets/main.js" type="module"></script>
+  </body>
+  </html>

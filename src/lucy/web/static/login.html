@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lucy AI — Iniciar sesión</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="branding">
+        <img class="ai-avatar" src="/assets/img/marquee-agentforce-ai-chatbot.jpg" alt="Avatar de Lucy" loading="lazy" width="36" height="36" />
+        <span class="logo" aria-hidden="true">🤖</span>
+        <div>
+          <h1>Lucy AI</h1>
+          <p class="subtitle">Acceso</p>
+        </div>
+      </div>
+      <div class="actions">
+        <a href="/" class="btn secondary">Volver</a>
+      </div>
+    </header>
+
+    <main class="container" style="grid-template-columns: 1fr;">
+      <section class="auth-panels" style="grid-template-columns: 1fr;">
+        <div class="card">
+          <div class="card-header">
+            <h2>Inicio de sesión</h2>
+          </div>
+          <form id="login-form" class="form-grid">
+            <div class="field">
+              <label>Email o usuario</label>
+              <input id="login-id" type="text" />
+              <div class="error" id="err-login-id"></div>
+            </div>
+            <div class="field">
+              <label>Contraseña</label>
+              <input id="login-password" type="password" />
+              <div class="error" id="err-login-password"></div>
+            </div>
+            <div class="actions-row">
+              <button type="submit" class="btn primary" id="btn-login">Iniciar sesión</button>
+              <a id="forgot" href="#" class="link">¿Olvidaste tu contraseña?</a>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>v1.0.0</span>
+    </footer>
+
+    <script src="/assets/login.js" type="module"></script>
+  </body>
+  </html>
