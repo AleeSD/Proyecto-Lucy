@@ -1,4 +1,5 @@
 from typing import Optional, Dict, Any
+import os
 import time
 import uuid
 
@@ -7,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.middleware.wsgi import WSGIMiddleware
+from django.core.wsgi import get_wsgi_application
 from pydantic import BaseModel, EmailStr
 from datetime import date, datetime
 import secrets
@@ -220,6 +223,15 @@ def create_app() -> FastAPI:
             "db": app.state.db.get_database_stats(),
         }
 
+    @app.get("/api/health/django")
+    async def health_django():
+        try:
+            from django.conf import settings as dj_settings
+            db_name = str(dj_settings.DATABASES['default']['NAME'])
+            return {"django": True, "db": db_name}
+        except Exception:
+            return {"django": False}
+
     @app.websocket("/ws/chat")
     async def ws_chat(ws: WebSocket):
         await ws.accept()
@@ -238,6 +250,11 @@ def create_app() -> FastAPI:
 
     # Rutas HTML con protección
     @app.get("/")
+    async def home_page():
+        with open(static_dir / "index.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(f.read())
+
+    @app.get("/register")
     async def register_page():
         with open(static_dir / "register.html", "r", encoding="utf-8") as f:
             return HTMLResponse(f.read())
@@ -256,5 +273,13 @@ def create_app() -> FastAPI:
 
     # Montar assets estáticos
     app.mount("/assets", StaticFiles(directory=str(assets_dir), html=False), name="assets")
+
+    # Montar Django bajo /django (coexistencia híbrida)
+    try:
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "lucy_site.settings")
+        django_app = get_wsgi_application()
+        app.mount("/django", WSGIMiddleware(django_app))
+    except Exception:
+        pass
 
     return app

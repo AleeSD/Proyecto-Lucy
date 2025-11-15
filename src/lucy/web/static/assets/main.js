@@ -18,10 +18,13 @@ function ensureSession(id) {
     sessionId = id || `web_${Date.now()}`;
     localStorage.setItem(SESSION_KEY, sessionId);
   }
-  $sessionFooter.textContent = `Sesión: ${sessionId}`;
+  if ($sessionFooter) {
+    $sessionFooter.textContent = `Sesión: ${sessionId}`;
+  }
 }
 
 function addMessage(role, text) {
+  if (!$messages) return;
   const item = document.createElement("div");
   item.className = `msg ${role}`;
   item.innerHTML = `
@@ -61,20 +64,24 @@ async function refreshStats() {
   } catch {}
 }
 
-$form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const text = $input.value.trim();
-  if (!text) return;
-  $input.value = "";
-  sendMessage(text);
-});
+if ($form && $input) {
+  $form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = $input.value.trim();
+    if (!text) return;
+    $input.value = "";
+    sendMessage(text);
+  });
+}
 
-$toggleStats.addEventListener("click", () => {
-  $stats.classList.toggle("hidden");
-  if (!$stats.classList.contains("hidden")) {
-    refreshStats();
-  }
-});
+if ($toggleStats && $stats) {
+  $toggleStats.addEventListener("click", () => {
+    $stats.classList.toggle("hidden");
+    if (!$stats.classList.contains("hidden")) {
+      refreshStats();
+    }
+  });
+}
 
 ensureSession();
 

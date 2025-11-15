@@ -31,7 +31,7 @@
     "api": {
         "enabled": false,
         "host": "localhost",
-        "port": 8000,
+        "port": 8001,
         "debug": false,
         "cors_enabled": true,
         "rate_limit": {
