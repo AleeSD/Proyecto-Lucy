@@ -52,7 +52,7 @@ from lucy.utils import suppress_tf_logs
 
 # Suprimir logs de TensorFlow desde el inicio
 with suppress_tf_logs():
-    from lucy import LucyAI, ConfigManager, get_config_manager
+    from lucy import LucyAI, get_config_manager
     from lucy.database import ConversationDB
     from lucy.utils import create_session_id, performance_monitor, log_error_with_context
     # Integración del sistema de logging y monitoreo (Día 02)

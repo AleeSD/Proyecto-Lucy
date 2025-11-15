@@ -1,5 +1,3 @@
-from typing import Optional
-
 from .transformer_wrapper import SafeHF
 
 

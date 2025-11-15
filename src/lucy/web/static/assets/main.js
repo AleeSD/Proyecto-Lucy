@@ -185,3 +185,36 @@ if ($loginForm) {
 }
 
 fetchCsrf();
+
+// Sidebar: resaltado activo al hacer scroll
+const sidebarMenu = document.querySelector('.home-menu');
+if (sidebarMenu) {
+  const links = Array.from(sidebarMenu.querySelectorAll('a[href^="#"]'));
+  const sectionByEl = new Map();
+  links.forEach((link) => {
+    const id = link.getAttribute('href').slice(1);
+    const section = document.getElementById(id);
+    if (section) sectionByEl.set(section, link);
+  });
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const link = sectionByEl.get(entry.target);
+        if (!link) return;
+        if (entry.isIntersecting) {
+          links.forEach((a) => a.removeAttribute('aria-current'));
+          link.setAttribute('aria-current', 'true');
+        }
+      });
+    },
+    { rootMargin: '-60% 0px -35% 0px', threshold: 0.15 }
+  );
+  sectionByEl.forEach((_, section) => observer.observe(section));
+  sidebarMenu.addEventListener('click', (ev) => {
+    const t = ev.target;
+    if (t && t.tagName === 'A') {
+      links.forEach((a) => a.removeAttribute('aria-current'));
+      t.setAttribute('aria-current', 'true');
+    }
+  });
+}

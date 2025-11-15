@@ -18,17 +18,14 @@
       <div class="actions">
         <a href="/" class="btn secondary">Inicio</a>
         <a href="/register" class="btn secondary">Registro</a>
-        <a href="/login" class="btn secondary" aria-current="true">Inicio de sesión</a>
       </div>
-      <div class="actions"></div>
     </header>
 
-    <main class="container" style="grid-template-columns: 1fr;">
-      <section class="auth-panels" style="grid-template-columns: 1fr;">
-        <div class="card">
+    <main class="center-wrap">
+        <section class="float-card" aria-labelledby="login-title">
           <div class="card-header">
-            <h2>Inicio de sesión</h2>
-          </div>
+              <h2 id="login-title">Inicio de sesión</h2>
+            </div>
           <form id="login-form" class="form-grid">
             <div class="field">
               <label>Email o usuario</label>
@@ -45,8 +42,7 @@
               <a id="forgot" href="#" class="link">¿Olvidaste tu contraseña?</a>
             </div>
           </form>
-        </div>
-      </section>
+        </section>
     </main>
 
     <footer class="footer">

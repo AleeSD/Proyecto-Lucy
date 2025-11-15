@@ -12,7 +12,6 @@ Cada plugin debe exponer una clase que implemente PluginInterface.
 """
 
 import importlib.util
-import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional

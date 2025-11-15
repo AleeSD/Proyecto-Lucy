@@ -1,6 +1,6 @@
 """Wrapper seguro para usar Hugging Face transformers si están disponibles"""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 class SafeHF:

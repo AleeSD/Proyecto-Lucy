@@ -12,7 +12,6 @@ from typing import Any, Dict, List
 
 from ..config_manager import ConfigManager
 from .pipelines import (
-    SafeHF,
     analyze_document_sentiment,
     analyze_sentence_sentiment,
     generate_text,

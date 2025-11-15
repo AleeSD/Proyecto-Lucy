@@ -16,44 +16,64 @@
         </div>
       </div>
       <div class="actions">
-        <a href="/" class="btn secondary" aria-current="true">Inicio</a>
         <a href="/register" class="btn secondary">Registro</a>
         <a href="/login" class="btn secondary">Inicio de sesión</a>
       </div>
     </header>
 
-    <main class="container" style="grid-template-columns: 1fr;">
-      <section class="card" aria-labelledby="about-title">
-        <div class="card-header">
-          <h2 id="about-title">Información de la I.A</h2>
-        </div>
-        <nav class="quick-menu" aria-label="Menú rápido">
-          <a href="#capabilities">Capacidades</a>
-          <a href="#architecture">Arquitectura</a>
-          <a href="#performance">Rendimiento</a>
-          <a href="#use-cases">Casos de uso</a>
-          <a href="#roadmap">Futuras funcionalidades</a>
-          <a href="#release-notes">Última actualización</a>
-          <a href="#author">Autor</a>
-          <a href="#published">Fecha de publicación</a>
-          <a href="#license">Derechos de uso</a>
-        </nav>
+    <main class="home-wrap">
+      <div class="home-grid">
+        <aside class="home-sidebar">
+          <nav class="home-menu" aria-label="Atajos de información">
+            <a href="#capabilities">Capacidades</a>
+            <a href="#architecture">Arquitectura</a>
+            <a href="#performance">Rendimiento</a>
+            <a href="#use-cases">Casos de uso</a>
+            <a href="#roadmap">Futuras funcionalidades</a>
+            <a href="#release-notes">Última actualización</a>
+            <a href="#author">Autor</a>
+            <a href="#published">Fecha de publicación</a>
+            <a href="#license">Derechos de uso</a>
+            <a href="#security">Seguridad</a>
+            <a href="#accessibility">Accesibilidad</a>
+            <a href="#sidebar-info">Sidebar de inicio</a>
+          </nav>
+          <div class="home-sidebar-reserved" aria-hidden="true"></div>
+        </aside>
+        <div class="home-content">
+          <section class="float-card home-card" aria-labelledby="about-title">
+           <div class="card-header">
+             <h2 id="about-title">Información de la I.A</h2>
+           </div>
         <article id="capabilities">
           <h3>Capacidades técnicas</h3>
           <ul>
             <li>PLN multilingüe (es/en), detección de idioma y análisis semántico</li>
+            <li>Normalización y lematización con NLTK cuando aplica</li>
             <li>Clasificación de intenciones con modelo TensorFlow y fallback heurístico</li>
             <li>Sistema de plugins y servicios externos con hooks seguros</li>
             <li>Memoria a largo plazo (embeddings e índice) para recuperación contextual</li>
             <li>Logging estructurado y métricas de rendimiento</li>
+            <li>Autocompletado y normalización avanzada de entradas</li>
+            <li>Configuración dinámica en runtime y perfiles de usuario</li>
           </ul>
+          <p>Incluye validaciones en tiempo real para formularios y saneamiento de entradas. El motor adapta la respuesta según el idioma y el contexto, con umbrales de confianza configurables.</p>
         </article>
         <article id="architecture">
           <h3>Arquitectura</h3>
           <pre aria-label="Diagrama de arquitectura">Usuario → LucyAI → Intención → Respuesta
-  ├─ ConversationDB
-  ├─ LoggingSystem
-  └─ ConfigManager</pre>
+   ├─ ConversationDB
+   ├─ LoggingSystem
+   └─ ConfigManager</pre>
+          <ul>
+            <li>Plugins con `PluginManager` y contratos seguros</li>
+            <li>Servicios externos desacoplados con clientes y reintentos</li>
+            <li>Memoria semántica con índice configurable</li>
+            <li>Web/API con FastAPI y protección CSRF</li>
+            <li>ConfigManager observa cambios en `config/config.json` (watcher)</li>
+            <li>Integración híbrida opcional con Django para administración</li>
+          </ul>
+          <p>La configuración dinámica observa cambios en tiempo real y los aplica sin reiniciar. La base de datos optimiza consultas con índices por usuario y fecha.</p>
         </article>
         <article id="performance">
           <h3>Especificaciones de rendimiento</h3>
@@ -61,7 +81,11 @@
             <li>Objetivo p95 de respuesta &lt; 2s en escenarios comunes</li>
             <li>Umbral de confianza configurable y cache de resultados</li>
             <li>Persistencia eficiente con SQLite y índices dedicados</li>
+            <li>Métricas de latencia y cobertura de pruebas disponibles</li>
+            <li>Optimización de repintados y uso moderado de efectos visuales</li>
+            <li>Cache de clasificación y contexto reutilizable por sesión</li>
           </ul>
+          <p>El sistema registra métricas clave (latencia, aciertos de intención, carga de CPU) y permite auditoría para mejorar continuamente el desempeño.</p>
         </article>
         <article id="use-cases">
           <h3>Casos de uso</h3>
@@ -69,7 +93,10 @@
             <li>Asistente personal local con historial y contexto</li>
             <li>Integración de comandos `!api`, `!nlp`, `!mem` para extensiones</li>
             <li>Laboratorio de PLN y prototipado rápido</li>
+            <li>Monitoreo y auditoría para entornos educativos</li>
+            <li>Prototipado de flujos conversacionales con trazabilidad y métricas</li>
           </ul>
+          <p>La interfaz web facilita flujos guiados y atajos rápidos desde el sidebar para acceder a la documentación y funcionalidades clave.</p>
         </article>
         <article id="roadmap">
           <h3>Futuras funcionalidades</h3>
@@ -77,11 +104,13 @@
             <li>Interfaz web avanzada y workflows</li>
             <li>Voz y visión</li>
             <li>Analytics y recomendaciones</li>
+            <li>Integración híbrida con Django para administración</li>
           </ul>
+          <p>Se planean mejoras de accesibilidad, localización y soporte de nuevas fuentes de datos con permisos granulados.</p>
         </article>
         <article id="release-notes">
           <h3>Notas de la última actualización</h3>
-          <p>Se añadieron vistas separadas de registro/login/chat, protección CSRF y rutas autenticadas, más validaciones y fondo unificado.</p>
+          <p>Se añadieron vistas separadas de registro/login/chat, protección CSRF y rutas autenticadas, validaciones ampliadas, sidebar de información en inicio y ajustes de opacidad.</p>
         </article>
         <article id="author">
           <h3>Autor</h3>
@@ -95,7 +124,46 @@
           <h3>Derechos de uso</h3>
           <p>Uso personal y educativo. Consulta el README para condiciones adicionales.</p>
         </article>
-      </section>
+        <article id="security">
+          <h3>Seguridad</h3>
+          <ul>
+            <li>CSRF con token y cookie de sesión `HttpOnly`</li>
+            <li>Hash PBKDF2-HMAC-SHA256 con salt único por usuario</li>
+            <li>Sanitización básica de inputs y comparación constante</li>
+            <li>Rate limiting y CORS configurables</li>
+          </ul>
+          <p>Se recomienda mantener secretos fuera del repositorio y revisar logs estructurados para auditoría.</p>
+        </article>
+        <article id="accessibility">
+          <h3>Accesibilidad</h3>
+          <ul>
+            <li>Contraste y tipografía conforme a WCAG AA</li>
+            <li>Navegación por teclado en enlaces y formularios</li>
+            <li>Layout responsive con contenedores semitransparentes</li>
+            <li>Scroll suave con preferencia de usuario respetada</li>
+          </ul>
+          <p>La interfaz prioriza legibilidad y consistencia visual, con elementos de interacción claros y estados visibles.</p>
+        </article>
+        <article id="sidebar-info">
+          <h3>Sidebar de inicio (atajos de información)</h3>
+          <ul>
+            <li>Ancho fijo ~280px en escritorio, fondo semitransparente y bordes acordes</li>
+            <li>Incluye enlaces a secciones: capacidades, arquitectura, rendimiento, casos de uso, roadmap</li>
+            <li>Última actualización, autor, fecha y derechos de uso</li>
+            <li>Secciones adicionales: seguridad y accesibilidad</li>
+            <li>En móviles se apila por encima del contenido principal</li>
+          </ul>
+          <p>La tarjeta de información se centra y el sidebar permanece fijo al desplazarte, facilitando navegación por atajos.</p>
+        </article>
+        <section class="media-grid" aria-label="Recursos visuales">
+          <img src="/assets/img/image1.jpg" alt="Visual 1" loading="lazy" />
+          <img src="/assets/img/image2.jpg" alt="Visual 2" loading="lazy" />
+          <img src="/assets/img/image3.webp" alt="Visual 3" loading="lazy" />
+          <img src="/assets/img/image4.jpg" alt="Visual 4" loading="lazy" />
+        </section>
+          </section>
+        </div>
+      </div>
     </main>
 
     <footer class="footer">

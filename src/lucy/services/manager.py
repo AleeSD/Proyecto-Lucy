@@ -6,9 +6,7 @@ Provee un ServiceManager para integrar APIs externas de forma modular.
 Cada servicio implementa BaseServiceClient con método `execute(operation, params)`.
 """
 
-import logging
 from typing import Any, Dict, Optional
-from pathlib import Path
 
 from ..config_manager import ConfigManager
 from ..logging_system import get_logger

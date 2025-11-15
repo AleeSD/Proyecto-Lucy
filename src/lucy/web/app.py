@@ -11,13 +11,13 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.middleware.wsgi import WSGIMiddleware
 from django.core.wsgi import get_wsgi_application
 from pydantic import BaseModel, EmailStr
-from datetime import date, datetime
+from datetime import date
 import secrets
 
-from lucy import get_config_manager
-from lucy.lucy_ai import LucyAI
-from lucy.database import ConversationDB
-from lucy.logging_system import log_conversation, log_performance, get_logger
+from .. import get_config_manager
+from ..lucy_ai import LucyAI
+from ..database import ConversationDB
+from ..logging_system import log_conversation, log_performance, get_logger
 
 
 class ChatRequest(BaseModel):

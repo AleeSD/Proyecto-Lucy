@@ -7,7 +7,7 @@ Responde a mensajes que comiencen con el prefijo "!echo ".
 
 from typing import Any, Dict, List
 
-from .manager import PluginInterface, PluginResult
+from lucy.plugins.manager import PluginInterface, PluginResult
 
 
 class EchoPlugin(PluginInterface):

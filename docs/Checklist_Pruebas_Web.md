@@ -22,6 +22,13 @@
 - [ ] Login exitoso redirige a `/chat`
 - [ ] Logout redirige a `/`
 
+## Inicio (Sidebar de información)
+- [ ] Sidebar visible solo en `/` y oculto en vistas de auth
+- [ ] Enlaces del sidebar apuntan a anclajes de la página y funcionan
+- [ ] Reserva del 30% presente y sin romper layout
+- [ ] Comportamiento responsive correcto (sidebar arriba en ≤900px)
+- [ ] Legibilidad y contraste adecuados en enlaces y encabezados
+
 ## Validación
 - [ ] HTML/CSS válido según W3C (validator.w3.org)
 - [ ] Consola sin errores en navegación estándar

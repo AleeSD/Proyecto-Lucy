@@ -17,19 +17,14 @@
       </div>
       <div class="actions">
         <a href="/" class="btn secondary">Inicio</a>
-        <a href="/register" class="btn secondary" aria-current="true">Registro</a>
         <a href="/login" class="btn secondary">Inicio de sesión</a>
-      </div>
-      <div class="actions">
-        <a href="/login" class="btn secondary">Iniciar sesión</a>
       </div>
     </header>
 
-    <main class="container" style="grid-template-columns: 1fr;">
-      <section class="auth-panels" style="grid-template-columns: 1fr;">
-        <div class="card">
-          <div class="card-header">
-            <h2>Registro</h2>
+    <main class="center-wrap">
+      <section class="float-card" aria-labelledby="register-title">
+        <div class="card-header">
+            <h2 id="register-title">Registro</h2>
           </div>
           <form id="register-form" class="form-grid">
             <div class="field">
@@ -66,81 +61,6 @@
               <button type="submit" class="btn primary" id="btn-register">Registrarse</button>
             </div>
           </form>
-        </div>
-        <div class="card" aria-labelledby="about-title">
-          <div class="card-header">
-            <h2 id="about-title">Información de la I.A</h2>
-          </div>
-          <nav class="quick-menu" aria-label="Menú rápido">
-            <a href="#capabilities">Capacidades</a>
-            <a href="#architecture">Arquitectura</a>
-            <a href="#performance">Rendimiento</a>
-            <a href="#use-cases">Casos de uso</a>
-            <a href="#roadmap">Futuras funcionalidades</a>
-            <a href="#release-notes">Última actualización</a>
-            <a href="#author">Autor</a>
-            <a href="#published">Fecha de publicación</a>
-            <a href="#license">Derechos de uso</a>
-          </nav>
-          <article id="capabilities">
-            <h3>Capacidades técnicas</h3>
-            <ul>
-              <li>PLN multilingüe (es/en), detección de idioma y análisis semántico</li>
-              <li>Clasificación de intenciones con modelo TensorFlow y fallback heurístico</li>
-              <li>Sistema de plugins y servicios externos con hooks seguros</li>
-              <li>Memoria a largo plazo (embeddings e índice) para recuperación contextual</li>
-              <li>Logging estructurado y métricas de rendimiento</li>
-            </ul>
-          </article>
-          <article id="architecture">
-            <h3>Arquitectura</h3>
-            <p>Componentes principales: `LucyAI`, `ConfigManager`, `ConversationDB`, `LoggingSystem`, gestores de `NLP`, `Plugins`, `Servicios` y `Memoria`.</p>
-            <pre aria-label="Diagrama de arquitectura">Usuario → LucyAI → Intención → Respuesta
-  ├─ ConversationDB
-  ├─ LoggingSystem
-  └─ ConfigManager</pre>
-          </article>
-          <article id="performance">
-            <h3>Especificaciones de rendimiento</h3>
-            <ul>
-              <li>Objetivo p95 de respuesta &lt; 2s en escenarios comunes</li>
-              <li>Umbral de confianza configurable y cache de resultados</li>
-              <li>Persistencia eficiente con SQLite y índices dedicados</li>
-            </ul>
-          </article>
-          <article id="use-cases">
-            <h3>Casos de uso</h3>
-            <ul>
-              <li>Asistente personal local con historial y contexto</li>
-              <li>Integración de comandos `!api`, `!nlp`, `!mem` para extensiones</li>
-              <li>Laboratorio de PLN y prototipado rápido</li>
-            </ul>
-          </article>
-          <article id="roadmap">
-            <h3>Futuras funcionalidades</h3>
-            <ul>
-              <li>Interfaz web avanzada y workflows</li>
-              <li>Voz y visión (Semana 3)</li>
-              <li>Analytics y recomendaciones</li>
-            </ul>
-          </article>
-          <article id="release-notes">
-            <h3>Notas de la última actualización</h3>
-            <p>Se añadieron vistas separadas de registro/login/chat, protección CSRF y rutas autenticadas, más validaciones y fondo unificado.</p>
-          </article>
-          <article id="author">
-            <h3>Autor</h3>
-            <p>AleeSD</p>
-          </article>
-          <article id="published">
-            <h3>Fecha de publicación</h3>
-            <p>2025-11-14</p>
-          </article>
-          <article id="license">
-            <h3>Derechos de uso</h3>
-            <p>Uso personal y educativo. Consulta el README para condiciones adicionales.</p>
-          </article>
-        </div>
       </section>
     </main>
 

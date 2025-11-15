@@ -10,7 +10,10 @@ import os
 import sys
 import logging
 import time
-import langdetect
+"""
+Nota: detection se importa dinámicamente dentro de get_language para evitar
+dependencia innecesaria en tiempo de importación.
+"""
 import datetime
 from contextlib import contextmanager
 from functools import wraps

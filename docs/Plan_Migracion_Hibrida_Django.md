@@ -133,6 +133,66 @@ python lucy.py --api
 - Avatar consistente: aplicado en headers (`register.html:11`, `login.html:11`, `chat.html:11`).
 - Mantener opacidad 85% y `backdrop-filter` moderado para rendimiento.
 
+## Diseño de Inicio de Sesión (UI)
+### Tipografía
+- Aumentar tamaño base en vistas de login en 15% y ajustar interlineado proporcional.
+- Aplicación sugerida usando scope por vista:
+```css
+.login-layout { font-size: 1.15em; line-height: 1.6; }
+.login-layout h1, .login-layout h2 { line-height: 1.25; }
+.login-layout .subtitle { font-size: 0.9em; }
+```
+
+### Formulario
+- Incrementar ancho del contenedor de login en 20% y mantener padding ≥ 15px.
+```css
+.login-card { width: min(92vw, 864px); }
+.login-card, .login-card .field input { padding: 15px; }
+```
+- Mantener el diseño flotante centrado usando `center-wrap` + `float-card`.
+
+## Sidebar de Atajos (vertical)
+- Reorganizar atajos en un sidebar vertical con espaciado modular y reserva del 30% para expansión.
+```html
+<main class="center-wrap login-layout">
+  <div class="login-grid">
+    <aside class="sidebar">
+      <nav class="sidebar-menu" aria-label="Atajos">
+        <a class="item" href="/register">Registro</a>
+        <a class="item" href="/login">Inicio de sesión</a>
+        <a class="item" href="/">Inicio</a>
+      </nav>
+      <div class="sidebar-reserved" aria-hidden="true"></div>
+    </aside>
+    <section class="float-card login-card">...</section>
+  </div>
+</main>
+```
+```css
+.login-grid { display: grid; grid-template-columns: 280px 1fr; gap: var(--space-4); }
+.sidebar { background: rgba(17,24,39,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: var(--space-4); }
+.sidebar-menu { display: flex; flex-direction: column; gap: var(--space-3); }
+.sidebar-menu .item { padding: var(--space-3) var(--space-4); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; text-decoration: none; color: var(--text); background: rgba(255,255,255,0.06); }
+.sidebar-reserved { min-height: 30%; }
+@media (max-width: 900px) {
+  .login-grid { grid-template-columns: 1fr; }
+  .sidebar { order: -1; }
+}
+```
+
+## Sistema de Diseño: componentes y tokens
+- Mantener coherencia con el sistema actual; añadir tokens de espaciado reutilizables.
+```css
+:root {
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
+}
+```
+- Componentes reutilizables:
+  - `login-layout`: scope tipográfico para la vista.
+  - `login-grid`: layout con sidebar + contenido.
+  - `login-card`: variante de `float-card` con ancho ampliado y padding mínimo.
+- Documentación de estilos: usar estos nombres en HTML para vistas de login; respetar colores, sombras y bordes existentes.
+
 ## Consideraciones de Seguridad
 - FastAPI: cookies HttpOnly (`src/lucy/web/app.py:199`), CSRF (`src/lucy/web/app.py:137`).
 - Django: CSRF y sesiones nativas; revisar `ALLOWED_HOSTS`, `SECURE_*` si se despliega en producción.

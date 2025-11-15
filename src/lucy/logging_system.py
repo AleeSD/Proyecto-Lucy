@@ -14,7 +14,6 @@ Características:
 - Métricas de rendimiento
 """
 
-import os
 import sys
 import json
 import logging
