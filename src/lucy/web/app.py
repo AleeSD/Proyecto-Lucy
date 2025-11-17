@@ -16,6 +16,7 @@ import secrets
 
 from .. import get_config_manager
 from ..lucy_ai import LucyAI
+from ..utils import suppress_tf_logs
 from ..database import ConversationDB
 from ..logging_system import log_conversation, log_performance, get_logger
 
@@ -56,13 +57,20 @@ def create_app() -> FastAPI:
 
     app.state.config_manager = config_manager
     app.state.db = ConversationDB(config.get("database", {}).get("path", "data/conversations.db"))
-    app.state.engine = LucyAI(config_manager)
+    with suppress_tf_logs():
+        app.state.engine = LucyAI(config_manager)
     app.state.rate_limit = {
         "enabled": api_cfg.get("rate_limit", {}).get("enabled", True),
         "rpm": int(api_cfg.get("rate_limit", {}).get("requests_per_minute", 60)),
         "buckets": {}
     }
+    app.state.rate_limit_auth = {
+        "enabled": api_cfg.get("rate_limit_auth", {}).get("enabled", True),
+        "rpm": int(api_cfg.get("rate_limit_auth", {}).get("requests_per_minute", 12)),
+        "buckets": {}
+    }
     app.state.auth_tokens = {}
+    app.state.ws_cancel = {}
 
     class RegisterRequest(BaseModel):
         username: str
@@ -85,7 +93,11 @@ def create_app() -> FastAPI:
 
     def _require_auth(request: Request) -> bool:
         token = request.cookies.get("session_token")
-        return bool(token and token in app.state.auth_tokens)
+        info = app.state.auth_tokens.get(token)
+        if not info:
+            return False
+        exp = float(info.get("exp", 0))
+        return exp > time.time()
 
     @app.post("/api/chat")
     async def chat(req: ChatRequest, request: Request):
@@ -132,6 +144,15 @@ def create_app() -> FastAPI:
                 response_time=elapsed,
                 context=req.context or {}
             )
+            intent_name = app.state.engine.get_last_intent() or "unknown"
+            prev = app.state.db.get_context(session_id, f"theme:{intent_name}") or []
+            prev.append({"user": req.message, "bot": response})
+            prev = prev[-10:]
+            app.state.db.set_context(session_id, f"theme:{intent_name}", prev)
+            recent = app.state.db.get_context(session_id, "recent") or []
+            recent.append({"user": req.message, "bot": response})
+            recent = recent[-10:]
+            app.state.db.set_context(session_id, "recent", recent)
         except Exception:
             logger.warning("No se pudo guardar conversación en DB")
 
@@ -146,6 +167,16 @@ def create_app() -> FastAPI:
 
     @app.post("/api/register")
     async def register(req: RegisterRequest, request: Request):
+        if app.state.rate_limit_auth["enabled"]:
+            key = request.client.host or "unknown"
+            bucket = app.state.rate_limit_auth["buckets"].setdefault(key, [])
+            now = time.time()
+            window = 60.0
+            rpm = max(1, app.state.rate_limit_auth["rpm"])
+            bucket[:] = [t for t in bucket if now - t < window]
+            if len(bucket) >= rpm:
+                return JSONResponse(status_code=429, content={"error": "Demasiados intentos de registro"})
+            bucket.append(now)
         if not _require_csrf(request):
             return JSONResponse(status_code=403, content={"error": "CSRF inválido"})
 
@@ -181,6 +212,16 @@ def create_app() -> FastAPI:
 
     @app.post("/api/login")
     async def login(req: LoginRequest, request: Request):
+        if app.state.rate_limit_auth["enabled"]:
+            key = request.client.host or "unknown"
+            bucket = app.state.rate_limit_auth["buckets"].setdefault(key, [])
+            now = time.time()
+            window = 60.0
+            rpm = max(1, app.state.rate_limit_auth["rpm"])
+            bucket[:] = [t for t in bucket if now - t < window]
+            if len(bucket) >= rpm:
+                return JSONResponse(status_code=429, content={"error": "Demasiados intentos de inicio de sesión"})
+            bucket.append(now)
         if not _require_csrf(request):
             return JSONResponse(status_code=403, content={"error": "CSRF inválido"})
 
@@ -197,7 +238,8 @@ def create_app() -> FastAPI:
             return JSONResponse(status_code=500, content={"error": "Error al iniciar sesión"})
 
         token = secrets.token_urlsafe(32)
-        app.state.auth_tokens[token] = {"username": user.get("username"), "email": user.get("email")}
+        ttl = int(api_cfg.get("session_ttl_seconds", 12*3600))
+        app.state.auth_tokens[token] = {"username": user.get("username"), "email": user.get("email"), "exp": time.time() + ttl}
         resp = JSONResponse({"ok": True})
         resp.set_cookie("session_token", token, secure=False, httponly=True, samesite="lax")
         return resp
@@ -216,12 +258,46 @@ def create_app() -> FastAPI:
             "engine_context": app.state.engine.get_conversation_context(),
         }
 
+    @app.post("/api/lang")
+    async def set_lang(request: Request):
+        if not _require_auth(request):
+            return JSONResponse(status_code=401, content={"error": "No autorizado"})
+        code = request.query_params.get("code")
+        if not code:
+            return JSONResponse(status_code=400, content={"error": "Falta código de idioma"})
+        app.state.engine.set_language(code)
+        sid = request.headers.get("X-Session-ID")
+        if sid:
+            app.state.db.update_session_settings(sid, {"preferred_language": code})
+        return {"ok": True, "language": app.state.engine.get_current_language()}
+
+    @app.post("/api/clear")
+    async def clear(request: Request):
+        if not _require_auth(request):
+            return JSONResponse(status_code=401, content={"error": "No autorizado"})
+        session_id = request.headers.get("X-Session-ID")
+        if not session_id:
+            return JSONResponse(status_code=400, content={"error": "Falta session_id"})
+        try:
+            deleted = app.state.db.clear_session_context(session_id)
+            app.state.engine.clear_context()
+        except Exception:
+            return JSONResponse(status_code=500, content={"error": "Error al limpiar contexto"})
+        return {"ok": True, "deleted": deleted}
+
     @app.get("/api/stats")
     async def stats():
         return {
             "engine": app.state.engine.get_statistics(),
             "db": app.state.db.get_database_stats(),
         }
+
+    @app.get("/api/health")
+    async def health():
+        try:
+            return {"ok": True, "engine": True}
+        except Exception:
+            return {"ok": False}
 
     @app.get("/api/health/django")
     async def health_django():
@@ -239,12 +315,55 @@ def create_app() -> FastAPI:
         try:
             while True:
                 payload = await ws.receive_json()
+                if payload.get("cancel"):
+                    sid = payload.get("session_id") or session_id
+                    if sid:
+                        app.state.ws_cancel[sid] = True
+                    await ws.send_json({"session_id": sid, "cancelled": True})
+                    continue
                 message = payload.get("message", "")
                 session_id = payload.get("session_id") or session_id or _gen_session_id()
                 start = time.time()
                 response = app.state.engine.process_message(message)
                 elapsed = time.time() - start
-                await ws.send_json({"session_id": session_id, "response": response, "t": elapsed})
+                words = response.split()
+                buf = []
+                cancelled = False
+                for i, w in enumerate(words):
+                    if app.state.ws_cancel.get(session_id):
+                        cancelled = True
+                        del app.state.ws_cancel[session_id]
+                        break
+                    buf.append(w)
+                    if (i + 1) % 6 == 0 or i == len(words) - 1:
+                        await ws.send_json({"session_id": session_id, "partial": True, "delta": " ".join(buf)})
+                        buf = []
+                if cancelled:
+                    await ws.send_json({"session_id": session_id, "final": True, "response": "", "t": elapsed, "cancelled": True})
+                else:
+                    await ws.send_json({"session_id": session_id, "final": True, "response": response, "t": elapsed})
+                    try:
+                        app.state.db.save_conversation(
+                            session_id=session_id,
+                            user_input=message,
+                            bot_response=response,
+                            language=app.state.engine.get_current_language(),
+                            confidence=app.state.engine.get_last_confidence(),
+                            intent=app.state.engine.get_last_intent(),
+                            response_time=elapsed,
+                            context={}
+                        )
+                        intent_name = app.state.engine.get_last_intent() or "unknown"
+                        prev = app.state.db.get_context(session_id, f"theme:{intent_name}") or []
+                        prev.append({"user": message, "bot": response})
+                        prev = prev[-10:]
+                        app.state.db.set_context(session_id, f"theme:{intent_name}", prev)
+                        recent = app.state.db.get_context(session_id, "recent") or []
+                        recent.append({"user": message, "bot": response})
+                        recent = recent[-10:]
+                        app.state.db.set_context(session_id, "recent", recent)
+                    except Exception:
+                        pass
         except WebSocketDisconnect:
             return
 

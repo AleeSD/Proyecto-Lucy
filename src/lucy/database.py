@@ -36,118 +36,7 @@ class ConversationDB:
         # Inicializar base de datos
         self._init_database()
     
-    def _init_database(self):
-        """Inicializa las tablas de la base de datos"""
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
             
-            # Tabla de conversaciones
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS conversations (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    session_id TEXT NOT NULL,
-                    user_input TEXT NOT NULL,
-                    bot_response TEXT NOT NULL,
-                    language TEXT NOT NULL,
-                    confidence REAL,
-                    intent TEXT,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    response_time REAL,
-                    context TEXT
-                )
-            ''')
-            
-            # Tabla de sesiones
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS sessions (
-                    session_id TEXT PRIMARY KEY,
-                    user_name TEXT,
-                    start_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    total_messages INTEGER DEFAULT 0,
-                    preferred_language TEXT DEFAULT 'es',
-                    settings TEXT
-                )
-            ''')
-            
-            # Tabla de aprendizaje (para futuros patrones)
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS learning_data (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    pattern TEXT NOT NULL,
-                    response TEXT NOT NULL,
-                    intent TEXT NOT NULL,
-                    language TEXT NOT NULL,
-                    frequency INTEGER DEFAULT 1,
-                    last_used DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    effectiveness_score REAL DEFAULT 0.0,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            
-            # Tabla de métricas
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS metrics (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    metric_name TEXT NOT NULL,
-                    metric_value TEXT NOT NULL,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            
-            # Tabla de contexto (nueva)
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS context (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    session_id TEXT NOT NULL,
-                    context_key TEXT NOT NULL,
-                    context_value TEXT NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    expires_at DATETIME,
-                    UNIQUE(session_id, context_key)
-                )
-            ''')
-            
-            # Índices para mejorar rendimiento
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_conversations_session ON conversations(session_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_conversations_timestamp ON conversations(timestamp)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_learning_pattern ON learning_data(pattern)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_sessions_activity ON sessions(last_activity)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_context_session ON context(session_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_context_expiry ON context(expires_at)')
-
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT NOT NULL UNIQUE,
-                    email TEXT NOT NULL UNIQUE,
-                    first_name TEXT NOT NULL,
-                    last_name TEXT NOT NULL,
-                    dob TEXT NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    password_salt TEXT NOT NULL,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            
-            conn.commit()
-            
-    @contextmanager
-    def _get_connection(self):
-        """Obtiene una conexión a la base de datos con manejo de contexto"""
-        conn = None
-        try:
-            conn = sqlite3.connect(self.db_path)
-            conn.row_factory = sqlite3.Row
-            yield conn
-        except sqlite3.Error as e:
-            self.logger.error(f"Error de base de datos: {e}")
-            if conn:
-                conn.rollback()
-            raise
-        finally:
-            if conn:
-                conn.close()
                 
     def create_session(self, user_name: str = None, preferred_language: str = 'es', 
                     settings: Dict[str, Any] = None) -> str:
@@ -214,51 +103,6 @@ class ConversationDB:
             return True, user
         return False, None
         
-    def store_conversation(self, session_id: str, user_input: str, bot_response: str,
-                        language: str, confidence: float = None, intent: str = None,
-                        response_time: float = None, context: Dict[str, Any] = None) -> int:
-        """
-        Almacena una conversación en la base de datos
-        
-        Args:
-            session_id: ID de la sesión
-            user_input: Entrada del usuario
-            bot_response: Respuesta del bot
-            language: Idioma de la conversación
-            confidence: Nivel de confianza de la respuesta
-            intent: Intención detectada
-            response_time: Tiempo de respuesta en segundos
-            context: Contexto de la conversación
-            
-        Returns:
-            ID de la conversación almacenada
-        """
-        context_json = json.dumps(context) if context else '{}'
-        
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            
-            # Actualizar actividad de la sesión
-            cursor.execute('''
-                UPDATE sessions 
-                SET last_activity = CURRENT_TIMESTAMP, 
-                    total_messages = total_messages + 1
-                WHERE session_id = ?
-            ''', (session_id,))
-            
-            # Insertar conversación
-            cursor.execute('''
-                INSERT INTO conversations 
-                (session_id, user_input, bot_response, language, confidence, 
-                intent, response_time, context)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (session_id, user_input, bot_response, language, confidence, 
-                intent, response_time, context_json))
-            
-            conversation_id = cursor.lastrowid
-            
-        self.logger.debug(f"Conversación almacenada: {conversation_id}")
-        return conversation_id
         
     def set_context(self, session_id: str, key: str, value: Any, 
                 expiry_minutes: int = None) -> None:
@@ -355,39 +199,6 @@ class ConversationDB:
                 
         return context
     
-    def get_conversation_history(self, session_id: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """
-        Obtiene el historial de conversaciones para una sesión
-        
-        Args:
-            session_id: ID de la sesión
-            limit: Número máximo de conversaciones a obtener
-            
-        Returns:
-            Lista de conversaciones ordenadas por timestamp
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT * FROM conversations
-                WHERE session_id = ?
-                ORDER BY timestamp DESC, id DESC
-                LIMIT ?
-            ''', (session_id, limit))
-            
-            rows = cursor.fetchall()
-            
-        history = []
-        for row in rows:
-            conversation = dict(row)
-            try:
-                conversation['context'] = json.loads(conversation['context'])
-            except (json.JSONDecodeError, KeyError):
-                conversation['context'] = {}
-                
-            history.append(conversation)
-            
-        return history
         
     def clear_expired_context(self) -> int:
         """
@@ -487,6 +298,20 @@ class ConversationDB:
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_sessions_activity ON sessions(last_activity)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_context_session ON context(session_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_context_expiry ON context(expires_at)')
+
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL UNIQUE,
+                    email TEXT NOT NULL UNIQUE,
+                    first_name TEXT NOT NULL,
+                    last_name TEXT NOT NULL,
+                    dob TEXT NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    password_salt TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
             
             conn.commit()
             
@@ -552,6 +377,14 @@ class ConversationDB:
             conn.commit()
             return conversation_id
     
+    def clear_session_context(self, session_id: str) -> int:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM context WHERE session_id = ?', (session_id,))
+            deleted = cursor.rowcount
+            conn.commit()
+            return deleted
+
     def get_conversation_history(self, session_id: str, limit: int = 10) -> List[Dict]:
         """
         Obtiene el historial de conversación de una sesión

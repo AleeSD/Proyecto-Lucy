@@ -1,4 +1,10 @@
 let csrfToken = null;
+function showToast(message, type = 'success'){
+  let container = document.querySelector('.toast-container');
+  if(!container){ container = document.createElement('div'); container.className='toast-container'; document.body.appendChild(container); }
+  const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.textContent = message; container.appendChild(toast);
+  setTimeout(()=>{ toast.remove(); if(container.children.length===0) container.remove(); }, 7000);
+}
 async function fetchCsrf(){ try { const r = await fetch('/api/csrf'); const d = await r.json(); csrfToken = d.csrf_token; } catch {} }
 function setError(id, msg){ const el = document.getElementById(id); if(el) el.textContent = msg || ''; }
 function validateUsername(v){ return /^[A-Za-z0-9]{6,}$/.test(v); }
@@ -25,7 +31,7 @@ document.getElementById('register-form').addEventListener('submit', async (e)=>{
   if(!validatePassword(payload.password)){ setError('err-password','Mínimo 8, incluye mayúscula, minúscula y dígito'); ok=false; }
   if(!ok){ btn.disabled=false; return; }
   const res = await fetch('/api/register',{ method:'POST', headers:{ 'Content-Type':'application/json', ...(csrfToken?{'X-CSRF-Token':csrfToken}:{}) }, body: JSON.stringify(payload) }); const data = await res.json();
-  btn.disabled=false; if(!res.ok){ alert(data.error||'Error en registro'); } else { window.location.href = '/login'; }
+  btn.disabled=false; if(!res.ok){ showToast(data.error||'Error en registro','error'); } else { showToast('Usuario registrado correctamente','success'); }
 });
 function initQuickMenu(){
   const links = Array.from(document.querySelectorAll('.quick-menu a'));

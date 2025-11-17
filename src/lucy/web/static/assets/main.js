@@ -11,6 +11,20 @@ const $sessionFooter = document.getElementById("session-id");
 const $regForm = document.getElementById("register-form");
 const $loginForm = document.getElementById("login-form");
 
+function showToast(message, type = "success") {
+  let container = document.querySelector(".toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.className = "toast-container";
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => { toast.remove(); if (container.children.length === 0) container.remove(); }, 7000);
+}
+
 let csrfToken = null;
 
 function ensureSession(id) {
@@ -156,7 +170,7 @@ if ($regForm) {
     if (!res.ok) {
       alert(data.error || "Error en registro");
     } else {
-      alert("Registro completado");
+      showToast("Usuario registrado correctamente", "success");
     }
   });
 }
@@ -179,7 +193,7 @@ if ($loginForm) {
     if (!res.ok) {
       alert(data.error || "Error en inicio de sesión");
     } else {
-      alert("Sesión iniciada");
+      showToast("Sesión iniciada correctamente", "success");
     }
   });
 }

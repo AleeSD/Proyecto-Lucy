@@ -56,11 +56,13 @@ class LucyAI:
         self.classes = None
         self.model = None
         self.intents = {}
+        self._intents_mtime = 0.0
         
         # Inicializar componentes
         self._ensure_nltk_data()
         self._load_model_components()
         self._load_intents()
+        self._intents_mtime = self._get_intents_mtime()
         
         # Sistema de plugins (Día 8)
         try:
@@ -190,10 +192,33 @@ class LucyAI:
                 raise FileNotFoundError("No se encontraron archivos de intenciones válidos")
             
             self.logger.info(f"[OK] Intenciones cargadas para idiomas: {list(self.intents.keys())}")
-            
+
         except Exception as e:
             self.logger.error(f"Error cargando intenciones: {e}")
             raise
+
+    def _get_intents_mtime(self) -> float:
+        try:
+            intents_dir = Path(self.config_manager.get_path('intents_dir'))
+            mtimes = []
+            for f in intents_dir.glob('intents_*.json'):
+                try:
+                    mtimes.append(f.stat().st_mtime)
+                except Exception:
+                    pass
+            return max(mtimes) if mtimes else 0.0
+        except Exception:
+            return 0.0
+
+    def _auto_reload_intents(self):
+        try:
+            current = self._get_intents_mtime()
+            if current > self._intents_mtime:
+                self._load_intents()
+                self._intents_mtime = current
+                self.logger.info("[OK] Intenciones recargadas por cambio en disco")
+        except Exception as e:
+            self.logger.warning(f"No se pudo recargar intenciones automáticamente: {e}")
     
     def autocomplete_message(self, partial_message: str) -> List[str]:
         """
@@ -251,6 +276,9 @@ class LucyAI:
             if not message or not message.strip():
                 return self._get_default_response("empty_message")
             
+            # Recargar intents si cambiaron en disco
+            self._auto_reload_intents()
+
             # Sanitizar entrada
             message = message.strip()[:self.config.get('security', {}).get('max_input_length', 1000)]
             
@@ -381,6 +409,15 @@ class LucyAI:
             confidence_threshold = self.config.get('model', {}).get('confidence_threshold', 0.25)
             
             if self.last_confidence < confidence_threshold:
+                fb = self._predict_intent_fallback(message)
+                if fb:
+                    self.last_intent = fb[0]['intent']
+                    self.last_confidence = float(fb[0]['probability'])
+                    response = self._generate_response(self.last_intent, message, context)
+                    self._update_context(message, response)
+                    self.logger.debug(f"Procesado '{message}' -> Intent: {self.last_intent} "
+                                    f"(Confianza: {self.last_confidence:.2%})")
+                    return response
                 return self._get_default_response("low_confidence")
             
             # Generar respuesta basada en la intención
@@ -504,36 +541,42 @@ class LucyAI:
             return [{'intent': 'fallback', 'probability': 1.0}]
 
     def _predict_intent_fallback(self, message: str) -> List[Dict[str, Any]]:
-        """
-        Heurística simple basada en coincidencia de palabras con patrones de intents
-        usada cuando no hay modelo ML disponible.
-        """
         try:
+            import unicodedata
+            nm = ''.join(c for c in unicodedata.normalize('NFD', message.lower()) if c.isalnum() or c.isspace())
+            if self.current_language == 'es':
+                greets = ['hola', 'hola lucy', 'buen dia', 'buenos dias', 'buenas tardes', 'buenas noches', 'hey', 'que tal', 'hola que tal', 'hola buenos dias']
+                for g in greets:
+                    if nm.startswith(g):
+                        return [{'intent': 'saludo', 'probability': 0.99}]
+            elif self.current_language == 'en':
+                greets = ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'hello lucy', 'hi there']
+                for g in greets:
+                    if nm.startswith(g):
+                        return [{'intent': 'greeting', 'probability': 0.99}]
+
             tokens = [self.lemmatizer.lemmatize(tok) for tok in nltk.word_tokenize(message.lower())]
             token_set = set(tokens)
             current_intents = self.intents.get(self.current_language, {}).get('intents', [])
-
             scored: List[Tuple[str, float]] = []
             for intent in current_intents:
                 tag = intent.get('tag')
                 patterns = intent.get('patterns', [])
                 if not tag or not patterns:
                     continue
-                score = 0.0
-                total = 0
+                best = 0.0
                 for p in patterns:
                     ptoks = [self.lemmatizer.lemmatize(t) for t in nltk.word_tokenize(p.lower())]
                     if not ptoks:
                         continue
-                    overlap = len(token_set.intersection(ptoks))
-                    total += 1
-                    # Normalizar por longitud de patrón
-                    score += overlap / max(1, len(set(ptoks)))
-                if total > 0:
-                    scored.append((tag, score / total))
+                    overlap = len(token_set.intersection(set(ptoks)))
+                    sim = overlap / max(1, len(set(ptoks)))
+                    if sim > best:
+                        best = sim
+                if best > 0:
+                    scored.append((tag, best))
 
             scored.sort(key=lambda x: x[1], reverse=True)
-
             results: List[Dict[str, Any]] = []
             for tag, s in scored[:3]:
                 if s > 0:

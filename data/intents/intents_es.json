@@ -1,1 +1,80 @@
-{"intents": [{"tag": "saludo", "patterns": ["hola"], "responses": ["Hola!"]}]}
+{
+    "intents": [
+        {
+        "tag": "saludo",
+        "patterns": [
+            "hola",
+            "hola lucy",
+            "buen dia",
+            "buenos dias",
+            "buenas tardes",
+            "buenas noches",
+            "hey",
+            "que tal",
+            "qué tal",
+            "hola que tal",
+            "hola buenos dias"
+        ],
+        "responses": [
+            "¡Hola! Soy Lucy, tu asistente de I.A.",
+            "¡Hola! ¿En qué puedo ayudarte?",
+            "¡Buen día! ¿Qué necesitas hoy?",
+            "¡Buenas! Aquí para ayudarte.",
+            "¡Hola! Puedo explicarte mis funciones si lo deseas."
+        ]
+        },
+        {
+        "tag": "saludos",
+        "patterns": [
+            "hola",
+            "hola lucy",
+            "buen dia",
+            "buenos dias",
+            "buenas tardes",
+            "buenas noches",
+            "hey",
+            "que tal",
+            "qué tal",
+            "hola que tal",
+            "hola buenos dias"
+        ],
+        "responses": [
+            "¡Hola! Soy Lucy, tu asistente de I.A.",
+            "¡Hola! ¿En qué puedo ayudarte?",
+            "¡Buen día! ¿Qué necesitas hoy?",
+            "¡Buenas! Aquí para ayudarte.",
+            "¡Hola! Puedo explicarte mis funciones si lo deseas."
+        ]
+        },
+        {
+        "tag": "presentacion",
+        "patterns": [
+            "quien eres",
+            "quién eres",
+            "presentate",
+            "preséntate",
+            "como te llamas",
+            "cómo te llamas",
+            "que es lucy",
+            "qué es lucy"
+        ],
+        "responses": [
+            "Soy Lucy, un asistente de I.A de escritorio adaptable. Puedo conversar, registrar e iniciar usuarios, mantener contexto y ejecutar plugins y servicios externos."
+        ]
+        },
+        {
+        "tag": "funciones",
+        "patterns": [
+            "que puedes hacer",
+            "qué puedes hacer",
+            "que funciones tienes",
+            "qué funciones tienes",
+            "para que sirves",
+            "para qué sirves"
+        ],
+        "responses": [
+            "Puedo chatear y responder preguntas, guardar historial, gestionar sesiones, ejecutar comandos y conectarme a servicios. Dime qué necesitas."
+        ]
+        }
+    ]
+}

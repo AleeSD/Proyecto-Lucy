@@ -525,26 +525,28 @@ python lucy.py --train           # Re-entrenar modelo
     args = parser.parse_args()
     
     try:
-        # Inicializar aplicación
-        app = LucyApplication(config_path=args.config)
-        
         # Ejecutar según el modo solicitado
-        if args.test:
-            success = app.run_tests()
-            sys.exit(0 if success else 1)
-        
-        elif args.train:
-            app.run_training()
-        
-        elif args.api:
+        if args.api:
+            from lucy import get_config_manager
             from lucy.web import create_app
-            api_cfg = app.config.get('api', {})
+            api_cfg = get_config_manager(args.config).get('api', {})
             host = api_cfg.get('host', '127.0.0.1')
             port = int(api_cfg.get('port', 8000))
             debug = bool(api_cfg.get('debug', False))
             print(f"[GLOBE] Iniciando servidor web en http://{host}:{port}/")
             import uvicorn
             uvicorn.run(create_app(), host=host, port=port, reload=debug)
+            return
+
+        # Inicializar aplicación para modos interactivos/tests/train
+        app = LucyApplication(config_path=args.config)
+        
+        if args.test:
+            success = app.run_tests()
+            sys.exit(0 if success else 1)
+        
+        elif args.train:
+            app.run_training()
         
         else:
             # Modo chat interactivo por defecto
